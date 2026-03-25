@@ -85,6 +85,12 @@ export function buildDenchCloudConfigPatch(params: {
         models: buildDenchCloudAgentModelEntries(params.models),
       },
     },
+    auth: {
+      profiles: {
+        [`${PROVIDER_ID}:default`]: { provider: PROVIDER_ID, mode: "api_key" },
+        "dench:default": { provider: "dench", mode: "api_key" },
+      },
+    },
   };
 }
 
@@ -204,6 +210,14 @@ function buildProviderAuthResult(params: {
         credential: {
           type: "api_key",
           provider: PROVIDER_ID,
+          key: params.apiKey,
+        },
+      },
+      {
+        profileId: "dench:default",
+        credential: {
+          type: "api_key",
+          provider: "dench",
           key: params.apiKey,
         },
       },

@@ -1685,7 +1685,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 				}
 
 				let sessionId = currentSessionId;
-				if (!sessionId && !isSubagentMode && !isGatewayMode) {
+				const isNewSession = !sessionId && !isSubagentMode && !isGatewayMode;
+				if (isNewSession) {
 					const titleSource =
 						userText || "File attachment";
 					const title =
@@ -1756,6 +1757,31 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 					void sendMessage({ text: messageText });
 				}
 
+				// Fire-and-forget AI title generation
+				if (sessionId && !isSubagentMode && !isGatewayMode) {
+					if (isNewSession) {
+						void fetch(`/api/web-sessions/${sessionId}/generate-title`, {
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ messages: [userText] }),
+						}).then((res) => { if (res.ok) onSessionsChange?.(); }).catch(() => {});
+					} else {
+						const userCount = messages.filter((m) => m.role === "user").length + 1;
+						if (userCount % 3 === 0) {
+							const recentTexts = messages
+								.filter((m) => m.role === "user")
+								.slice(-2)
+								.map((m) => m.parts?.filter((p) => p.type === "text").map((p) => ("text" in p ? p.text : "")).join("") ?? "")
+								.concat(userText);
+							void fetch(`/api/web-sessions/${sessionId}/generate-title`, {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({ messages: recentTexts }),
+							}).then((res) => { if (res.ok) onSessionsChange?.(); }).catch(() => {});
+						}
+					}
+				}
+
 				setTimeout(() => {
 					editorRef.current?.focus();
 				}, 200);
@@ -1775,6 +1801,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 				onConversationActivity,
 				isSubagentMode,
 				setMessages,
+				messages,
 			],
 		);
 
@@ -1937,6 +1964,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 					onSessionsChange?.();
 					userScrolledAwayRef.current = false;
 					void sendMessage({ text });
+					void fetch(`/api/web-sessions/${sessionId}/generate-title`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ messages: [text] }),
+					}).then((res) => { if (res.ok) onSessionsChange?.(); }).catch(() => {});
 				},
 				insertFileMention: (name: string, path: string) => {
 					editorRef.current?.insertFileMention(name, path);

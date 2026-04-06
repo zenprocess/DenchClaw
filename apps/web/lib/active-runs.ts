@@ -717,7 +717,7 @@ export function startSubscribeRun(params: {
 			key: sessionKey,
 			thinkingLevel: "high",
 			verboseLevel: "full",
-			reasoningLevel: "on",
+			reasoningLevel: "stream",
 		},
 		{ timeoutMs: 4_000 },
 	).catch(() => {});
@@ -1661,6 +1661,11 @@ function wireChildProcess(run: ActiveRun): void {
 		}
 
 		// Thinking / reasoning
+		// #region agent log
+		if (ev.event === "agent" && ev.stream === "thinking") {
+			fetch('http://127.0.0.1:7651/ingest/93e0c293-34f1-4a69-8fce-870fc1b93fcb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4a4504'},body:JSON.stringify({sessionId:'4a4504',location:'active-runs.ts:wireChildProcess:thinking',message:'Thinking event received',data:{delta:typeof ev.data?.delta,deltaLen:typeof ev.data?.delta==='string'?ev.data.delta.length:0,dataKeys:ev.data?Object.keys(ev.data):[]},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+		}
+		// #endregion
 		if (ev.event === "agent" && ev.stream === "thinking") {
 			const delta =
 				typeof ev.data?.delta === "string"
@@ -1674,6 +1679,9 @@ function wireChildProcess(run: ActiveRun): void {
 						type: "reasoning-start",
 						id: currentReasoningId,
 					});
+					// #region agent log
+					fetch('http://127.0.0.1:7651/ingest/93e0c293-34f1-4a69-8fce-870fc1b93fcb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4a4504'},body:JSON.stringify({sessionId:'4a4504',location:'active-runs.ts:wireChildProcess:reasoning-start',message:'Emitted reasoning-start',data:{reasoningId:currentReasoningId},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+					// #endregion
 					reasoningStarted = true;
 				}
 				emit({
@@ -2007,6 +2015,12 @@ function wireChildProcess(run: ActiveRun): void {
 		} catch {
 			return;
 		}
+
+		// #region agent log
+		if (ev.event === "agent") {
+			fetch('http://127.0.0.1:7651/ingest/93e0c293-34f1-4a69-8fce-870fc1b93fcb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4a4504'},body:JSON.stringify({sessionId:'4a4504',location:'active-runs.ts:rl.on-line',message:'Gateway event received',data:{event:ev.event,stream:ev.stream,phase:ev.data?.phase,hasDelta:typeof ev.data?.delta==='string',sessionKey:ev.sessionKey?.slice(-20)},timestamp:Date.now(),hypothesisId:'H1,H4,H5'})}).catch(()=>{});
+		}
+		// #endregion
 
 		// Skip events from other sessions (e.g. subagent broadcasts that
 		// the gateway delivers on the same WS connection).

@@ -981,6 +981,7 @@ class GatewayProcessHandle
 		if (sessionKey) {
 			await this.ensureFullToolVerbose(sessionKey, this.params.modelOverride);
 		}
+
 	}
 
 	private async beginSubscribeMode(afterSeq: number): Promise<void> {
@@ -1081,7 +1082,7 @@ class GatewayProcessHandle
 			key: sessionKey,
 			thinkingLevel: "high",
 			verboseLevel: "full",
-			reasoningLevel: "on",
+			reasoningLevel: "stream",
 		};
 		const normalizedModelOverride = normalizeModelOverride(modelOverride);
 		if (normalizedModelOverride) {
@@ -1195,7 +1196,7 @@ class GatewayProcessHandle
 				(typeof frame.seq === "number" ? frame.seq : undefined);
 			if (
 				typeof eventGlobalSeq === "number" &&
-				eventGlobalSeq <= this.replayFloorSeq
+				(eventGlobalSeq <= this.replayFloorSeq || eventGlobalSeq <= this.lastGlobalSeq)
 			) {
 				return;
 			}

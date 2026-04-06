@@ -2503,6 +2503,20 @@ async function applyDenchCloudBootstrapConfig(params: {
     timeoutMs: 30_000,
     errorMessage: "Failed to enable reasoning visibility for Dench Cloud.",
   });
+
+  await runOpenClawOrThrow({
+    openclawCommand: params.openclawCommand,
+    args: [
+      "--profile",
+      params.profile,
+      "config",
+      "set",
+      "agents.defaults.typingMode",
+      "thinking",
+    ],
+    timeoutMs: 30_000,
+    errorMessage: "Failed to set typing mode for reasoning streaming.",
+  }).catch(() => {});
 }
 
 async function resolveDenchCloudBootstrapSelection(params: {

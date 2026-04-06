@@ -309,7 +309,13 @@ export async function POST(req: Request) {
 						return;
 					}
 					try {
-						const json = JSON.stringify(normalizeLiveStreamEvent(event));
+						const normalized = normalizeLiveStreamEvent(event);
+						// #region agent log
+						if (normalized.type === 'reasoning-start' || normalized.type === 'reasoning-delta' || normalized.type === 'reasoning-end') {
+							fetch('http://127.0.0.1:7651/ingest/93e0c293-34f1-4a69-8fce-870fc1b93fcb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4a4504'},body:JSON.stringify({sessionId:'4a4504',location:'route.ts:SSE-stream',message:'Reasoning event sent to client',data:{type:normalized.type,id:normalized.id,hasDelta:'delta' in normalized,deltaLen:typeof normalized.delta==='string'?normalized.delta.length:0},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+						}
+						// #endregion
+						const json = JSON.stringify(normalized);
 						controller.enqueue(encoder.encode(`data: ${json}\n\n`));
 					} catch { /* ignore */ }
 				},

@@ -814,6 +814,14 @@ function FeedbackButtons({ messageId, sessionId }: { messageId: string; sessionI
 export const ChatMessage = memo(function ChatMessage({ message, isStreaming, onSubagentClick, onFilePathClick, onComposioAction, sessionId, voicePlaybackEnabled = false, userHtmlMap }: { message: UIMessage; isStreaming?: boolean; onSubagentClick?: (task: string) => void; onFilePathClick?: FilePathClickHandler; onComposioAction?: (action: ComposioChatAction) => void; sessionId?: string | null; voicePlaybackEnabled?: boolean; userHtmlMap?: Map<string, string> }) {
 	const isUser = message.role === "user";
 	const segments = groupParts(message.parts);
+	// #region agent log
+	if (!isUser && isStreaming) {
+		const partTypes = message.parts.map((p) => p.type);
+		const reasoningParts = message.parts.filter((p) => p.type === 'reasoning');
+		const chainSegments = segments.filter((s) => s.type === 'chain');
+		fetch('http://127.0.0.1:7651/ingest/93e0c293-34f1-4a69-8fce-870fc1b93fcb',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4a4504'},body:JSON.stringify({sessionId:'4a4504',location:'chat-message.tsx:render',message:'Assistant message parts during streaming',data:{partTypes,partCount:message.parts.length,reasoningCount:reasoningParts.length,reasoningTexts:reasoningParts.map((p)=>(p as {text?:string}).text?.slice(0,50)),segmentTypes:segments.map((s)=>s.type),chainSegmentCount:chainSegments.length},timestamp:Date.now(),hypothesisId:'H2,H3'})}).catch(()=>{});
+	}
+	// #endregion
 	const speechText = useMemo(() => extractSpeechText(segments), [segments]);
 	const markdownComponents = useMemo(
 		() => createMarkdownComponents(onFilePathClick, onComposioAction),

@@ -12,10 +12,9 @@ import {
   RECOMMENDED_DENCH_CLOUD_MODEL_ID,
 } from "../../../src/cli/dench-cloud";
 import {
-  rebuildComposioToolIndexIfReady,
-  type RebuildComposioToolIndexResult,
-} from "./composio-tool-index";
-import { refreshIntegrationsRuntime, type IntegrationRuntimeRefresh } from "./integrations";
+  refreshIntegrationsRuntime,
+  type IntegrationRuntimeRefresh,
+} from "./integrations";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -165,20 +164,8 @@ export type CloudSettingsUpdateResult = {
   state: CloudSettingsState;
   changed: boolean;
   refresh: IntegrationRuntimeRefresh;
-  toolIndexRebuild?: RebuildComposioToolIndexResult;
   error?: string;
 };
-
-async function rebuildComposioToolIndexBestEffort(): Promise<RebuildComposioToolIndexResult> {
-  try {
-    return await rebuildComposioToolIndexIfReady();
-  } catch (err) {
-    return {
-      ok: false,
-      reason: err instanceof Error ? err.message : "Failed to rebuild Composio tool index.",
-    };
-  }
-}
 
 export async function getCloudVoiceState(): Promise<CloudVoiceState> {
   const config = readConfig();
@@ -339,11 +326,10 @@ export async function saveApiKey(apiKey: string): Promise<CloudSettingsUpdateRes
 
   writeConfig(config);
 
-  const toolIndexRebuild = await rebuildComposioToolIndexBestEffort();
   const refresh = await refreshIntegrationsRuntime();
   const state = await getCloudSettingsState();
 
-  return { state, changed: true, refresh, toolIndexRebuild };
+  return { state, changed: true, refresh };
 }
 
 export async function selectModel(stableId: string): Promise<CloudSettingsUpdateResult> {
@@ -400,11 +386,10 @@ export async function selectModel(stableId: string): Promise<CloudSettingsUpdate
 
   writeConfig(config);
 
-  const toolIndexRebuild = await rebuildComposioToolIndexBestEffort();
   const refresh = await refreshIntegrationsRuntime();
   const state = await getCloudSettingsState();
 
-  return { state, changed: true, refresh, toolIndexRebuild };
+  return { state, changed: true, refresh };
 }
 
 export async function saveVoiceId(voiceId: string | null): Promise<CloudSettingsUpdateResult> {

@@ -14,6 +14,7 @@ import {
   resolveWorkspaceRoot,
 } from "@/lib/workspace";
 import { spawnAgentStartForSession, type AgentEvent } from "@/lib/agent-runner";
+import { denchIntegrationsBrand } from "@/lib/dench-integrations-brand";
 import { buildComposioMcpServerConfig } from "../../../src/cli/dench-cloud";
 
 type UnknownRecord = Record<string, unknown>;
@@ -104,11 +105,11 @@ const LIVE_AGENT_NOT_CHECKED_DETAIL = "Live agent visibility has not been checke
 const LIVE_AGENT_REPAIR_PENDING_DETAIL = "Configuration repaired. Run live agent verification to confirm MCP visibility.";
 
 const COMPOSIO_LIVE_PROBE_PROMPT = [
-  "You are running a Composio MCP availability probe.",
+  `You are running a ${denchIntegrationsBrand.displayName} availability probe.`,
   "Without calling any tool, inspect your currently available tool list.",
   "Reply with exactly one JSON object and nothing else.",
   'Use this schema: {"visible":true|false,"reason":"...","evidence":["..."]}.',
-  "Set visible=true only if this session directly exposes a Composio MCP path, meaning you can see either a server named `composio` or tool names like `GMAIL_FETCH_EMAILS`, `SLACK_SEND_MESSAGE`, `GITHUB_FIND_PULL_REQUESTS`, `NOTION_SEARCH`, `GOOGLE_CALENDAR_EVENTS_LIST`, or `LINEAR_LIST_ISSUES` in your available tools.",
+  "Set visible=true only if this session directly exposes the integration tools, meaning you can see either a server named `composio` or tool names like `GMAIL_FETCH_EMAILS`, `SLACK_SEND_MESSAGE`, `GITHUB_FIND_PULL_REQUESTS`, `NOTION_SEARCH`, `GOOGLE_CALENDAR_EVENTS_LIST`, or `LINEAR_LIST_ISSUES` in your available tools.",
   "If you are unsure, set visible=false.",
   "Do not call any tool.",
 ].join("\n");
@@ -344,8 +345,8 @@ function buildSummary(params: {
       level: "error",
       verified: false,
       message: params.lockBadge
-        ? `Composio is locked until ${params.lockBadge.toLowerCase()}.`
-        : "Composio is not currently eligible in this workspace.",
+        ? `${denchIntegrationsBrand.displayName} is locked until ${params.lockBadge.toLowerCase()}.`
+        : `${denchIntegrationsBrand.displayName} is not currently eligible in this workspace.`,
     };
   }
 
@@ -353,7 +354,7 @@ function buildSummary(params: {
     return {
       level: "error",
       verified: false,
-      message: "Composio MCP is not registered correctly in openclaw.json.",
+      message: `${denchIntegrationsBrand.displayName} is not registered correctly in openclaw.json.`,
     };
   }
 
@@ -361,7 +362,7 @@ function buildSummary(params: {
     return {
       level: "error",
       verified: false,
-      message: "Composio MCP is configured, but the gateway tools/list probe failed.",
+      message: `${denchIntegrationsBrand.displayName} is configured, but the gateway tool probe failed.`,
     };
   }
 
@@ -369,7 +370,7 @@ function buildSummary(params: {
     return {
       level: "error",
       verified: false,
-      message: "Composio MCP is configured, but a live agent session could not see the tools directly.",
+      message: `${denchIntegrationsBrand.displayName} is configured, but a live agent session could not see the tools directly.`,
     };
   }
 
@@ -377,7 +378,7 @@ function buildSummary(params: {
     return {
       level: "healthy",
       verified: true,
-      message: "Composio MCP is configured, reachable, and visible to live agent sessions.",
+      message: `${denchIntegrationsBrand.displayName} is configured, reachable, and visible to live agent sessions.`,
     };
   }
 
@@ -385,8 +386,8 @@ function buildSummary(params: {
     level: "healthy",
     verified: false,
     message: params.liveAgent.detail === LIVE_AGENT_REPAIR_PENDING_DETAIL
-      ? "Composio MCP configuration was refreshed and a live-agent verification can run in the background."
-      : "Composio MCP is configured and the gateway is reachable. Live-agent verification is pending.",
+      ? `${denchIntegrationsBrand.displayName} configuration was refreshed and a live-agent verification can run in the background.`
+      : `${denchIntegrationsBrand.displayName} is configured and the gateway is reachable. Live-agent verification is pending.`,
   };
 }
 
@@ -441,8 +442,8 @@ export async function getComposioMcpHealth(options?: {
     detail: !apiKey
       ? "No Dench Cloud API key is configured."
       : matchesExpected
-        ? "The Composio MCP server matches the expected gateway URL, transport, and Authorization header."
-        : "The Composio MCP server is missing or does not match the expected Dench Cloud gateway configuration.",
+        ? `The ${denchIntegrationsBrand.displayName} server matches the expected gateway URL, transport, and Authorization header.`
+        : `The ${denchIntegrationsBrand.displayName} server is missing or does not match the expected Dench Cloud gateway configuration.`,
     checkedAt: generatedAt,
     matchesExpected,
     configured: latestConfiguredServer,
@@ -470,8 +471,8 @@ export async function getComposioMcpHealth(options?: {
         gatewayTools = {
           status: tools.length > 0 ? "pass" : "fail",
           detail: tools.length > 0
-            ? "The gateway returned Composio MCP tools successfully."
-            : "The gateway returned zero Composio MCP tools.",
+            ? `The gateway returned ${denchIntegrationsBrand.displayName} tools successfully.`
+            : `The gateway returned zero ${denchIntegrationsBrand.singularDisplayName.toLowerCase()} tools.`,
           checkedAt: generatedAt,
           toolCount: tools.length,
         };

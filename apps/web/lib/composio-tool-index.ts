@@ -7,6 +7,7 @@ import {
   resolveComposioEligibility,
   resolveComposioGatewayUrl,
   type ComposioMcpTool,
+  type NormalizedComposioConnection,
 } from "@/lib/composio";
 import { resolveOpenClawStateDir, resolveWorkspaceRoot } from "@/lib/workspace";
 import {
@@ -15,34 +16,68 @@ import {
   normalizeComposioToolkitSlug,
 } from "@/lib/composio-client";
 
+export type ComposioToolSummary = {
+  name: string;
+  title: string;
+  description_short: string;
+  required_args: string[];
+  arg_hints: Record<string, string>;
+  default_args?: Record<string, unknown>;
+  example_args?: Record<string, unknown>;
+  example_prompts?: string[];
+  input_schema?: ComposioMcpTool["inputSchema"];
+};
+
+export type ComposioManagedAccount = {
+  connected_account_id: string;
+  account_identity: string;
+  account_identity_source: "gateway_stable_id" | "legacy_heuristic" | "connection_id";
+  identity_confidence: "high" | "low" | "unknown";
+  display_label: string;
+  account_label?: string | null;
+  account_name?: string | null;
+  account_email?: string | null;
+  external_account_id?: string | null;
+  related_connection_ids: string[];
+  is_same_account_reconnect: boolean;
+};
+
 /** Mirrors `extensions/dench-identity/composio-cheat-sheet.ts`. */
 export type ComposioToolIndex = {
   generated_at: string;
+  managed_tools: string[];
   connected_apps: Array<{
     toolkit_slug: string;
     toolkit_name: string;
     account_count: number;
-    tools: Array<{
-      name: string;
-      title: string;
-      description_short: string;
-      required_args: string[];
-      arg_hints: Record<string, string>;
-      default_args?: Record<string, unknown>;
-      example_args?: Record<string, unknown>;
-      example_prompts?: string[];
-      input_schema?: ComposioMcpTool["inputSchema"];
-    }>;
+    accounts: ComposioManagedAccount[];
+    tools: ComposioToolSummary[];
     recipes: Record<string, string>;
   }>;
 };
 
-const DEFAULT_TOP_TOOLS_PER_APP = 10;
-const TOP_TOOLS_PER_APP_OVERRIDES: Record<string, number> = {
+export type ComposioToolCatalogCache = {
+  generated_at: string;
+  connected_apps: Array<{
+    toolkit_slug: string;
+    toolkit_name: string;
+    tools: ComposioToolSummary[];
+  }>;
+};
+
+const COMPOSIO_MANAGED_TOOLS = [
+  "composio_search_tools",
+  "composio_resolve_tool",
+  "composio_call_tool",
+] as const;
+
+const DEFAULT_FEATURED_TOOLS_PER_APP = 10;
+const FEATURED_TOOLS_PER_APP_OVERRIDES: Record<string, number> = {
   github: 24,
   "google-calendar": 16,
+  stripe: 12,
 };
-const MAX_INDEXED_TOOLS_TOTAL = 100;
+const MAX_FEATURED_TOOLS_TOTAL = 100;
 
 type ToolRoutingPreset = {
   tool: string;
@@ -175,6 +210,39 @@ const RECIPES_BY_SLUG: Record<string, Record<string, ToolRoutingPreset>> = {
       example_prompts: ["open this Linear issue", "get a Linear ticket"],
     },
   },
+  stripe: {
+    "List subscriptions": {
+      tool: "STRIPE_LIST_SUBSCRIPTIONS",
+      example_prompts: [
+        "list all subscriptions",
+        "show subscriptions with trial info",
+        "calculate recurring revenue from Stripe subscriptions",
+      ],
+    },
+    "Search subscriptions": {
+      tool: "STRIPE_SEARCH_SUBSCRIPTIONS",
+      example_prompts: [
+        "search Stripe subscriptions",
+        "find subscriptions for a customer",
+      ],
+    },
+    "List customers": {
+      tool: "STRIPE_LIST_CUSTOMERS",
+      example_prompts: ["list Stripe customers", "show Stripe customers"],
+    },
+    "List invoices": {
+      tool: "STRIPE_LIST_INVOICES",
+      example_prompts: ["list Stripe invoices", "show unpaid invoices"],
+    },
+    "List charges": {
+      tool: "STRIPE_LIST_CHARGES",
+      example_prompts: ["list Stripe charges", "show recent charges"],
+    },
+    "Retrieve balance": {
+      tool: "STRIPE_RETRIEVE_BALANCE",
+      example_prompts: ["show Stripe balance", "retrieve account balance"],
+    },
+  },
 };
 
 function toolkitSlugToToolPrefix(slug: string): string {
@@ -288,6 +356,24 @@ const INDEX_PRIORITY_TERMS: Record<string, string[]> = {
     "calendar list",
     "create event",
   ],
+  stripe: [
+    "subscription",
+    "subscriptions",
+    "customer",
+    "customers",
+    "invoice",
+    "invoices",
+    "charge",
+    "charges",
+    "balance",
+    "billing",
+    "trial",
+    "arr",
+    "price",
+    "product",
+    "coupon",
+    "plan",
+  ],
 };
 
 function scoreToolPriority(slug: string, tool: ComposioMcpTool): number {
@@ -307,7 +393,7 @@ function scoreToolPriority(slug: string, tool: ComposioMcpTool): number {
 }
 
 function topToolsPerApp(slug: string): number {
-  return TOP_TOOLS_PER_APP_OVERRIDES[normalizeComposioToolkitSlug(slug)] ?? DEFAULT_TOP_TOOLS_PER_APP;
+  return FEATURED_TOOLS_PER_APP_OVERRIDES[normalizeComposioToolkitSlug(slug)] ?? DEFAULT_FEATURED_TOOLS_PER_APP;
 }
 
 function buildRecipesForToolkit(
@@ -401,7 +487,7 @@ function trimIndexedAppsToBudget(
     };
   });
 
-  let remainingBudget = MAX_INDEXED_TOOLS_TOTAL - trimmed.reduce(
+  let remainingBudget = MAX_FEATURED_TOOLS_TOTAL - trimmed.reduce(
     (count, app) => count + app.tools.length,
     0,
   );
@@ -429,6 +515,124 @@ function trimIndexedAppsToBudget(
   }
 
   return trimmed;
+}
+
+function summarizeTool(
+  tool: ComposioMcpTool,
+  routingPresets: Map<string, ToolRoutingPreset>,
+): ComposioToolSummary {
+  const schema = tool.inputSchema;
+  const title =
+    tool.title?.trim() ||
+    tool.annotations?.title?.trim() ||
+    tool.name.replace(/^([A-Z0-9]+_)+/i, "").replace(/_/g, " ") ||
+    tool.name;
+  const desc = tool.description?.trim() ?? "";
+  const preset = routingPresets.get(tool.name);
+  return {
+    name: tool.name,
+    title,
+    description_short: firstSentence(desc),
+    required_args: extractRequiredArgs(schema),
+    arg_hints: buildArgHints(tool.name, schema),
+    ...(preset?.default_args ? { default_args: preset.default_args } : {}),
+    ...(preset?.example_args ? { example_args: preset.example_args } : {}),
+    ...(preset?.example_prompts ? { example_prompts: preset.example_prompts } : {}),
+    ...(schema ? { input_schema: schema } : {}),
+  };
+}
+
+function buildManagedAccounts(connections: NormalizedComposioConnection[]): ComposioManagedAccount[] {
+  const byIdentity = new Map<string, ComposioManagedAccount>();
+  for (const connection of connections) {
+    const existing = byIdentity.get(connection.account_identity);
+    if (existing) {
+      existing.related_connection_ids = Array.from(
+        new Set([
+          ...existing.related_connection_ids,
+          ...connection.related_connection_ids,
+          connection.id,
+        ]),
+      ).sort();
+      if (!existing.account_email && connection.account_email) {
+        existing.account_email = connection.account_email;
+      }
+      if (!existing.account_name && connection.account_name) {
+        existing.account_name = connection.account_name;
+      }
+      if (!existing.account_label && connection.account_label) {
+        existing.account_label = connection.account_label;
+      }
+      if (!existing.external_account_id && connection.external_account_id) {
+        existing.external_account_id = connection.external_account_id;
+      }
+      continue;
+    }
+
+    byIdentity.set(connection.account_identity, {
+      connected_account_id: connection.id,
+      account_identity: connection.account_identity,
+      account_identity_source: connection.account_identity_source,
+      identity_confidence: connection.identity_confidence,
+      display_label: connection.display_label,
+      account_label: connection.account_label ?? null,
+      account_name: connection.account_name ?? null,
+      account_email: connection.account_email ?? null,
+      external_account_id: connection.external_account_id ?? null,
+      related_connection_ids: Array.from(
+        new Set([...connection.related_connection_ids, connection.id]),
+      ).sort(),
+      is_same_account_reconnect: connection.is_same_account_reconnect,
+    });
+  }
+
+  return Array.from(byIdentity.values()).sort((left, right) =>
+    left.display_label.localeCompare(right.display_label),
+  );
+}
+
+function readExistingComposioToolIndex(workspaceDir: string): ComposioToolIndex | null {
+  const filePath = join(workspaceDir, "composio-tool-index.json");
+  if (!existsSync(filePath)) {
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(filePath, "utf-8")) as ComposioToolIndex;
+  } catch {
+    return null;
+  }
+}
+
+function writeCatalogCache(workspaceDir: string, cache: ComposioToolCatalogCache): void {
+  const outPath = join(workspaceDir, "composio-tool-catalog.json");
+  writeFileSync(outPath, JSON.stringify(cache, null, 2) + "\n", "utf-8");
+}
+
+function extractManagedToolPrefixes(index: ComposioToolIndex | null): Set<string> {
+  const prefixes = new Set<string>();
+  if (!index) {
+    return prefixes;
+  }
+  for (const app of index.connected_apps) {
+    prefixes.add(toolkitSlugToToolPrefix(app.toolkit_slug));
+  }
+  return prefixes;
+}
+
+function isManagedComposioToolName(name: string, prefixes: Set<string>): boolean {
+  if (COMPOSIO_MANAGED_TOOLS.includes(name as typeof COMPOSIO_MANAGED_TOOLS[number])) {
+    return true;
+  }
+  const upper = name.trim().toUpperCase();
+  if (!upper) {
+    return false;
+  }
+  for (const prefix of prefixes) {
+    if (upper.startsWith(prefix)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function readConfig(): Record<string, unknown> {
@@ -471,7 +675,7 @@ function ensureRecord(parent: Record<string, unknown>, key: string): Record<stri
   return fresh;
 }
 
-function syncAllowedComposioTools(index: ComposioToolIndex): void {
+function syncAllowedComposioTools(index: ComposioToolIndex, previousIndex: ComposioToolIndex | null): void {
   const config = readConfig();
   const tools = ensureRecord(config, "tools");
 
@@ -482,25 +686,22 @@ function syncAllowedComposioTools(index: ComposioToolIndex): void {
   // Migrate any stale `tools.allow` entries into `alsoAllow` to fix sessions
   // that were broken by the semantics change.
   const legacyAllow = readStringList(tools.allow);
-  const alsoAllow = new Set(readStringList(tools.alsoAllow));
+  const previousManagedPrefixes = extractManagedToolPrefixes(previousIndex);
+  const currentManagedPrefixes = extractManagedToolPrefixes(index);
+  const managedPrefixes = new Set([...previousManagedPrefixes, ...currentManagedPrefixes]);
+  const preserved = new Set(
+    [...readStringList(tools.alsoAllow), ...legacyAllow].filter((name) =>
+      !isManagedComposioToolName(name, managedPrefixes)
+    ),
+  );
 
-  if (legacyAllow.length > 0) {
-    for (const name of legacyAllow) {
-      alsoAllow.add(name);
-    }
-    delete tools.allow;
+  delete tools.allow;
+
+  for (const name of index.managed_tools) {
+    preserved.add(name);
   }
 
-  alsoAllow.add("composio_resolve_tool");
-  for (const app of index.connected_apps) {
-    for (const tool of app.tools) {
-      alsoAllow.add(tool.name);
-    }
-    for (const toolName of Object.values(app.recipes)) {
-      alsoAllow.add(toolName);
-    }
-  }
-  tools.alsoAllow = Array.from(alsoAllow);
+  tools.alsoAllow = Array.from(preserved).sort((left, right) => left.localeCompare(right));
   writeConfig(config);
 }
 
@@ -535,26 +736,32 @@ export async function buildComposioToolIndex(
   const preferredToolNames = [...new Set(connectedToolkits.flatMap((slug) =>
     Object.values(RECIPES_BY_SLUG[normalizeComposioToolkitSlug(slug)] ?? {}).map((preset) => preset.tool),
   ))];
-  const allTools = await fetchComposioMcpToolsList(gatewayUrl, apiKey, {
-    connectedToolkits,
-    preferredToolNames,
-  });
-  const bySlug = new Map<string, { toolkit_name: string; accounts: Set<string> }>();
+  const allTools = connectedToolkits.length > 0
+    ? await fetchComposioMcpToolsList(gatewayUrl, apiKey, {
+      connectedToolkits,
+      preferredToolNames,
+    })
+    : [];
+  const bySlug = new Map<string, {
+    toolkit_name: string;
+    connections: NormalizedComposioConnection[];
+  }>();
 
   for (const c of active) {
     const slug = c.normalized_toolkit_slug;
     const existing = bySlug.get(slug);
     if (existing) {
-      existing.accounts.add(c.account_identity);
+      existing.connections.push(c);
     } else {
       bySlug.set(slug, {
         toolkit_name: c.toolkit_name?.trim() || slug,
-        accounts: new Set([c.account_identity]),
+        connections: [c],
       });
     }
   }
 
   const connected_apps: ComposioToolIndex["connected_apps"] = [];
+  const catalog_connected_apps: ComposioToolCatalogCache["connected_apps"] = [];
 
   for (const [slug, meta] of [...bySlug.entries()].toSorted((a, b) =>
     a[0].localeCompare(b[0]),
@@ -587,44 +794,39 @@ export async function buildComposioToolIndex(
       sortedTools: sorted,
       recipeToolNames: new Set(Object.values(recipes)),
     });
-    const tools = selectedTools.map((tool) => {
-      const schema = tool.inputSchema;
-      const title =
-        tool.title?.trim() ||
-        tool.annotations?.title?.trim() ||
-        tool.name.replace(/^([A-Z0-9]+_)+/i, "").replace(/_/g, " ") ||
-        tool.name;
-      const desc = tool.description?.trim() ?? "";
-      const preset = routingPresets.get(tool.name);
-      return {
-        name: tool.name,
-        title,
-        description_short: firstSentence(desc),
-        required_args: extractRequiredArgs(schema),
-        arg_hints: buildArgHints(tool.name, schema),
-        ...(preset?.default_args ? { default_args: preset.default_args } : {}),
-        ...(preset?.example_args ? { example_args: preset.example_args } : {}),
-        ...(preset?.example_prompts ? { example_prompts: preset.example_prompts } : {}),
-        ...(schema ? { input_schema: schema } : {}),
-      };
-    });
+    const accounts = buildManagedAccounts(meta.connections);
+    const catalogTools = sorted.map((tool) => summarizeTool(tool, routingPresets));
+    const tools = selectedTools.map((tool) => summarizeTool(tool, routingPresets));
 
     connected_apps.push({
       toolkit_slug: slug,
       toolkit_name: meta.toolkit_name,
-      account_count: meta.accounts.size,
+      account_count: accounts.length,
+      accounts,
       tools,
       recipes,
     });
+    catalog_connected_apps.push({
+      toolkit_slug: slug,
+      toolkit_name: meta.toolkit_name,
+      tools: catalogTools,
+    });
   }
 
+  const generated_at = new Date().toISOString();
   const index: ComposioToolIndex = {
-    generated_at: new Date().toISOString(),
+    generated_at,
+    managed_tools: [...COMPOSIO_MANAGED_TOOLS],
     connected_apps: trimIndexedAppsToBudget(connected_apps),
+  };
+  const catalogCache: ComposioToolCatalogCache = {
+    generated_at,
+    connected_apps: catalog_connected_apps,
   };
 
   const outPath = join(workspaceDir, "composio-tool-index.json");
   writeFileSync(outPath, JSON.stringify(index, null, 2) + "\n", "utf-8");
+  writeCatalogCache(workspaceDir, catalogCache);
 
   return index;
 }
@@ -656,12 +858,13 @@ export async function rebuildComposioToolIndexIfReady(): Promise<RebuildComposio
   }
 
   try {
+    const previousIndex = readExistingComposioToolIndex(workspaceDir);
     const index = await buildComposioToolIndex({
       workspaceDir,
       gatewayUrl: resolveComposioGatewayUrl(),
       apiKey,
     });
-    syncAllowedComposioTools(index);
+    syncAllowedComposioTools(index, previousIndex);
     return {
       ok: true,
       workspaceDir,

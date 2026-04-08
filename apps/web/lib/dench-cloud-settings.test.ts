@@ -179,15 +179,12 @@ describe("dench cloud settings", () => {
     });
   });
 
-  it("rebuilds the Composio index when saving the Dench Cloud API key", async () => {
+  it("refreshes integrations when saving the Dench Cloud API key", async () => {
     const result = await saveApiKey("dc-key");
 
-    expect(mocks.rebuildComposioToolIndexIfReady).toHaveBeenCalledTimes(1);
+    expect(mocks.rebuildComposioToolIndexIfReady).not.toHaveBeenCalled();
     expect(mocks.refreshIntegrationsRuntime).toHaveBeenCalledTimes(1);
-    expect(result.toolIndexRebuild).toEqual({
-      ok: false,
-      reason: "Dench Cloud must be the primary provider.",
-    });
+    expect(result).not.toHaveProperty("toolIndexRebuild");
 
     const written = JSON.parse(mocks.state.configText);
     expect(written.models.providers["dench-cloud"].apiKey).toBe("dc-key");
@@ -196,7 +193,7 @@ describe("dench cloud settings", () => {
     );
   });
 
-  it("rebuilds the Composio index when switching the primary model to Dench Cloud", async () => {
+  it("refreshes integrations when switching the primary model to Dench Cloud", async () => {
     mocks.state.configText = JSON.stringify({
       models: {
         providers: {
@@ -215,12 +212,9 @@ describe("dench cloud settings", () => {
 
     const result = await selectModel("claude-sonnet-4.6");
 
-    expect(mocks.rebuildComposioToolIndexIfReady).toHaveBeenCalledTimes(1);
+    expect(mocks.rebuildComposioToolIndexIfReady).not.toHaveBeenCalled();
     expect(mocks.refreshIntegrationsRuntime).toHaveBeenCalledTimes(1);
-    expect(result.toolIndexRebuild).toMatchObject({
-      ok: true,
-      connected_apps: 2,
-    });
+    expect(result).not.toHaveProperty("toolIndexRebuild");
 
     const written = JSON.parse(mocks.state.configText);
     expect(written.agents.defaults.model.primary).toBe("dench-cloud/claude-sonnet-4.6");

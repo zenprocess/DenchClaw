@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -27,18 +27,30 @@ vi.mock("@/lib/composio-client", () => ({
 
 vi.mock("@/lib/workspace", () => ({
   resolveWorkspaceRoot: vi.fn(),
+  resolveOpenClawStateDir: () => process.env.OPENCLAW_STATE_DIR ?? "/tmp/openclaw-state",
 }));
 
-import { buildComposioToolIndex } from "@/lib/composio-tool-index";
+import { buildComposioToolIndex, rebuildComposioToolIndexIfReady } from "@/lib/composio-tool-index";
 
 describe("buildComposioToolIndex", () => {
   let workspaceDir: string | undefined;
+  let stateDir: string | undefined;
+  const originalStateDir = process.env.OPENCLAW_STATE_DIR;
 
   afterEach(() => {
     vi.clearAllMocks();
     if (workspaceDir) {
       rmSync(workspaceDir, { recursive: true, force: true });
       workspaceDir = undefined;
+    }
+    if (stateDir) {
+      rmSync(stateDir, { recursive: true, force: true });
+      stateDir = undefined;
+    }
+    if (originalStateDir !== undefined) {
+      process.env.OPENCLAW_STATE_DIR = originalStateDir;
+    } else {
+      delete process.env.OPENCLAW_STATE_DIR;
     }
   });
 
@@ -47,10 +59,16 @@ describe("buildComposioToolIndex", () => {
 
     fetchComposioConnectionsMock.mockResolvedValue([
       {
+        id: "conn_gmail_1",
         is_active: true,
         normalized_toolkit_slug: "gmail",
         toolkit_name: "gmail",
         account_identity: "user@gmail.com",
+        account_identity_source: "gateway_stable_id",
+        identity_confidence: "high",
+        display_label: "user@gmail.com",
+        related_connection_ids: [],
+        is_same_account_reconnect: false,
       },
     ]);
 
@@ -124,6 +142,18 @@ describe("buildComposioToolIndex", () => {
     });
 
     const gmail = index.connected_apps[0];
+    expect(index.managed_tools).toEqual([
+      "composio_search_tools",
+      "composio_resolve_tool",
+      "composio_call_tool",
+    ]);
+    expect(gmail.accounts).toEqual([
+      expect.objectContaining({
+        connected_account_id: "conn_gmail_1",
+        account_identity: "user@gmail.com",
+        display_label: "user@gmail.com",
+      }),
+    ]);
     expect(gmail.recipes).toMatchObject({
       "Read recent emails": "GMAIL_FETCH_EMAILS",
       "Read one email": "GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID",
@@ -151,6 +181,15 @@ describe("buildComposioToolIndex", () => {
     const written = JSON.parse(
       readFileSync(path.join(workspaceDir, "composio-tool-index.json"), "utf-8"),
     );
+    const catalog = JSON.parse(
+      readFileSync(path.join(workspaceDir, "composio-tool-catalog.json"), "utf-8"),
+    );
+    expect(catalog.connected_apps[0].tools.map((tool: { name: string }) => tool.name)).toEqual([
+      "GMAIL_FETCH_EMAILS",
+      "GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID",
+      "GMAIL_SEND_EMAIL",
+      "GMAIL_GET_LABEL",
+    ]);
     expect(written.connected_apps[0].tools[2].input_schema.required).toEqual([
       "to",
       "subject",
@@ -163,10 +202,16 @@ describe("buildComposioToolIndex", () => {
 
     fetchComposioConnectionsMock.mockResolvedValue([
       {
+        id: "conn_github_1",
         is_active: true,
         normalized_toolkit_slug: "github",
         toolkit_name: "GitHub",
         account_identity: "user/github",
+        account_identity_source: "gateway_stable_id",
+        identity_confidence: "high",
+        display_label: "user/github",
+        related_connection_ids: [],
+        is_same_account_reconnect: false,
       },
     ]);
 
@@ -256,5 +301,102 @@ describe("buildComposioToolIndex", () => {
         "GITHUB_GET_A_PULL_REQUEST",
       ]),
     );
+  });
+
+  it("reconciles alsoAllow exactly and removes stale Composio tool entries", async () => {
+    workspaceDir = mkdtempSync(path.join(os.tmpdir(), "dench-composio-index-"));
+    stateDir = mkdtempSync(path.join(os.tmpdir(), "dench-composio-state-"));
+    process.env.OPENCLAW_STATE_DIR = stateDir;
+
+    writeFileSync(
+      path.join(workspaceDir, "composio-tool-index.json"),
+      JSON.stringify({
+        generated_at: "2026-04-01T00:00:00.000Z",
+        managed_tools: ["composio_search_tools", "composio_resolve_tool", "composio_call_tool"],
+        connected_apps: [
+          {
+            toolkit_slug: "stripe",
+            toolkit_name: "Stripe",
+            account_count: 1,
+            accounts: [
+              {
+                connected_account_id: "conn_stripe_1",
+                account_identity: "stripe:acct_123",
+                account_identity_source: "gateway_stable_id",
+                identity_confidence: "high",
+                display_label: "Stripe Prod",
+                related_connection_ids: [],
+                is_same_account_reconnect: false,
+              },
+            ],
+            tools: [],
+            recipes: {},
+          },
+        ],
+      }),
+      "utf-8",
+    );
+    writeFileSync(
+      path.join(stateDir, "openclaw.json"),
+      JSON.stringify({
+        tools: {
+          alsoAllow: [
+            "OTHER_TOOL",
+            "STRIPE_GET_ACCOUNT",
+            "STRIPE_LIST_SUBSCRIPTIONS",
+            "composio_resolve_tool",
+          ],
+          allow: ["STRIPE_SEARCH_SUBSCRIPTIONS"],
+        },
+      }),
+      "utf-8",
+    );
+
+    fetchComposioConnectionsMock.mockResolvedValue([
+      {
+        id: "conn_gmail_1",
+        is_active: true,
+        normalized_toolkit_slug: "gmail",
+        toolkit_name: "Gmail",
+        account_identity: "user@gmail.com",
+        account_identity_source: "gateway_stable_id",
+        identity_confidence: "high",
+        display_label: "user@gmail.com",
+        related_connection_ids: [],
+        is_same_account_reconnect: false,
+      },
+    ]);
+    fetchComposioMcpToolsListMock.mockResolvedValue([
+      {
+        name: "GMAIL_FETCH_EMAILS",
+        title: "Fetch emails",
+        description: "Fetch recent Gmail messages.",
+        inputSchema: { type: "object", properties: {} },
+        annotations: { readOnlyHint: true },
+      },
+    ]);
+
+    const composioModule = await import("@/lib/composio");
+    const workspaceModule = await import("@/lib/workspace");
+    vi.mocked(composioModule.resolveComposioApiKey).mockReturnValue("dc-key");
+    vi.mocked(composioModule.resolveComposioEligibility).mockReturnValue({
+      eligible: true,
+      lockReason: null,
+      lockBadge: null,
+    });
+    vi.mocked(composioModule.resolveComposioGatewayUrl).mockReturnValue("https://gateway.example.com");
+    vi.mocked(workspaceModule.resolveWorkspaceRoot).mockReturnValue(workspaceDir);
+
+    const result = await rebuildComposioToolIndexIfReady();
+    expect(result).toMatchObject({ ok: true });
+
+    const writtenConfig = JSON.parse(readFileSync(path.join(stateDir, "openclaw.json"), "utf-8"));
+    expect(writtenConfig.tools.alsoAllow).toEqual([
+      "composio_call_tool",
+      "composio_resolve_tool",
+      "composio_search_tools",
+      "OTHER_TOOL",
+    ]);
+    expect(writtenConfig.tools.allow).toBeUndefined();
   });
 });

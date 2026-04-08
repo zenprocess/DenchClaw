@@ -1,6 +1,7 @@
 import { resolveComposioEligibility } from "@/lib/composio";
 import { getComposioMcpHealth } from "@/lib/composio-mcp-health";
 import { rebuildComposioToolIndexIfReady } from "@/lib/composio-tool-index";
+import { refreshIntegrationsRuntime } from "@/lib/integrations";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,6 +31,7 @@ export async function POST() {
     return Response.json(body, { status: errorStatus(result.reason) });
   }
 
+  const runtime_refresh = await refreshIntegrationsRuntime();
   await getComposioMcpHealth();
 
   return Response.json({
@@ -37,5 +39,6 @@ export async function POST() {
     generated_at: result.generated_at,
     connected_apps: result.connected_apps,
     path: `${result.workspaceDir}/composio-tool-index.json`,
+    runtime_refresh,
   });
 }

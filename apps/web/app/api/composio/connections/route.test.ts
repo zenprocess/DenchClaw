@@ -30,7 +30,6 @@ describe("Composio connections API", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    rebuildComposioToolIndexIfReadyMock.mockResolvedValue({ ok: true });
     fetchComposioConnectionsMock.mockResolvedValue({
       connections: [
         {
@@ -83,7 +82,7 @@ describe("Composio connections API", () => {
       "dench_test_key",
       { limit: 100 },
     );
-    expect(rebuildComposioToolIndexIfReadyMock).toHaveBeenCalledTimes(1);
+    expect(rebuildComposioToolIndexIfReadyMock).not.toHaveBeenCalled();
   });
 
   it("bypasses the connections cache when fresh=1 is requested", async () => {

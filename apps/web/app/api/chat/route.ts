@@ -132,6 +132,7 @@ export async function POST(req: Request) {
 		userHtml,
 		modelOverride,
 		acknowledgeUnsafeOpenAiSwitch,
+		hasAssistantHistory: hasAssistantHistoryHint,
 	}: {
 		messages: UIMessage[];
 		sessionId?: string;
@@ -140,6 +141,7 @@ export async function POST(req: Request) {
 		userHtml?: string;
 		modelOverride?: string;
 		acknowledgeUnsafeOpenAiSwitch?: boolean;
+		hasAssistantHistory?: boolean;
 	} = await req.json();
 
 	const lastUserMessage = messages.filter((m) => m.role === "user").pop();
@@ -177,7 +179,7 @@ export async function POST(req: Request) {
 		isLikelyOpenAiModelId(normalizedModelOverride) &&
 		!isSubagentSession
 	) {
-		const hasAssistantHistory = messages.some((m) => m.role === "assistant");
+		const hasAssistantHistory = hasAssistantHistoryHint ?? messages.some((m) => m.role === "assistant");
 		const runtimeSession = getAgentSession(sessionId);
 		const meta = getSessionMeta(sessionId);
 		const kind = classifyOpenAiModelSwitch({

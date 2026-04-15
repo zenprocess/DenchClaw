@@ -1676,9 +1676,12 @@ function WorkspacePageInner() {
   // Handle file search selection: navigate sidebar to the file's location and open it
   const handleFileSearchSelect = useCallback(
     (item: { name: string; path: string; type: string }) => {
+      const itemPath = browseDir == null && workspaceRoot && item.path.startsWith(workspaceRoot + "/")
+        ? item.path.slice(workspaceRoot.length + 1)
+        : item.path;
       const node: TreeNode = {
         name: item.name,
-        path: item.path,
+        path: itemPath,
         type: item.type as TreeNode["type"],
       };
       if (item.type === "folder") {
@@ -1686,8 +1689,8 @@ function WorkspacePageInner() {
           setBrowseDir(item.path);
         }
         openTabForNode(node);
-        setActivePath(item.path);
-        setContent({ kind: "directory", node: { name: item.name, path: item.path, type: "folder" } });
+        setActivePath(itemPath);
+        setContent({ kind: "directory", node: { name: item.name, path: itemPath, type: "folder" } });
       } else {
         if (browseDir != null) {
           const parentOfFile = item.path.split("/").slice(0, -1).join("/") || "/";
@@ -1697,7 +1700,7 @@ function WorkspacePageInner() {
         void loadContent(node);
       }
     },
-    [browseDir, setBrowseDir, openTabForNode, loadContent],
+    [browseDir, workspaceRoot, setBrowseDir, openTabForNode, loadContent],
   );
 
   // Sync URL bar with active content / chat / browse / subagent / preview state.

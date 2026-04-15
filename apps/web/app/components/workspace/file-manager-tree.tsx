@@ -682,7 +682,10 @@ export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact
       setSelectedPath(null);
       return;
     }
-    const parts = activePath.split("/");
+    const relativePath = workspaceRoot && activePath.startsWith(workspaceRoot + "/")
+      ? activePath.slice(workspaceRoot.length + 1)
+      : activePath;
+    const parts = relativePath.split("/");
     if (parts.length > 1) {
       setExpandedPaths((prev) => {
         const next = new Set(prev);
@@ -697,7 +700,7 @@ export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact
         return changed ? next : prev;
       });
     }
-  }, [activePath]);
+  }, [activePath, workspaceRoot]);
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<TreeNode | null>(null);

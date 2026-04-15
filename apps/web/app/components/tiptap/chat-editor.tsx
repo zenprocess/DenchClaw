@@ -473,8 +473,8 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
 						color: inherit;
 						font-size: 12px;
 						font-weight: 500;
-						line-height: 1.6;
-						vertical-align: baseline;
+						line-height: 1.4;
+						vertical-align: middle;
 						cursor: default;
 						user-select: all;
 						white-space: nowrap;

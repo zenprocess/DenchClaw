@@ -205,7 +205,7 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 				<button
 					key={item.path}
 					type="button"
-					className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-left transition-all rounded-xl select-none ${index === selectedIndex ? "bg-neutral-400/15" : ""}`}
+					className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-left transition-all rounded-2xl select-none ${index === selectedIndex ? "bg-neutral-400/15" : ""}`}
 					style={{ color: "var(--color-text)" }}
 					onClick={() => selectItem(index)}
 					onMouseEnter={() => setSelectedIndex(index)}

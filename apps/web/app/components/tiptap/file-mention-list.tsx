@@ -10,6 +10,7 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import type { SearchIndexItem } from "@/lib/search-index";
 import {
 	IconFolderFilled,
 	IconFileFilled,
@@ -317,10 +318,11 @@ export function MentionPopupRenderer({
 }
 
 /**
- * Creates a Tiptap suggestion render() function that fetches file suggestions
- * from /api/workspace/suggest-files and renders them in a floating popup.
+ * Creates a Tiptap suggestion render() function that fetches file suggestions.
+ * If searchFnRef is provided, uses client-side search for instant results.
+ * Otherwise falls back to /api/workspace/suggest-files.
  */
-export function createFileMentionRenderer() {
+export function createFileMentionRenderer(searchFnRef?: React.RefObject<((query: string, limit?: number) => import("@/lib/search-index").SearchIndexItem[]) | null>) {
 	return () => {
 		let container: HTMLDivElement | null = null;
 		let root: ReturnType<typeof import("react-dom/client").createRoot> | null =
@@ -348,7 +350,32 @@ export function createFileMentionRenderer() {
 			);
 		}
 
+		function indexItemToSuggest(item: SearchIndexItem): SuggestItem {
+			return {
+				name: item.label,
+				path: item.path ?? item.id,
+				type: (item.kind === "entry" ? "entry" : item.kind === "object" ? "object" : item.nodeType ?? "file") as SuggestItem["type"],
+				icon: item.icon,
+				objectName: item.objectName,
+				entryId: item.entryId,
+				defaultView: item.defaultView,
+			};
+		}
+
+		function searchInstant(query: string) {
+			const fn = searchFnRef?.current;
+			if (fn) {
+				currentItems = fn(query, 20).map(indexItemToSuggest);
+				isLoading = false;
+				render();
+				return true;
+			}
+			return false;
+		}
+
 		async function fetchSuggestions(query: string) {
+			if (searchInstant(query)) return;
+
 			isLoading = true;
 			render();
 
@@ -377,6 +404,7 @@ export function createFileMentionRenderer() {
 		}
 
 		function debouncedFetch(query: string) {
+			if (searchInstant(query)) return;
 			if (debounceTimer) {clearTimeout(debounceTimer);}
 			debounceTimer = setTimeout(() => {
 				void fetchSuggestions(query);

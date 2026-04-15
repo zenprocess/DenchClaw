@@ -830,6 +830,8 @@ type ChatPanelProps = {
 	gatewayChannel?: string;
 	/** Whether this panel's tab is currently visible/active. Used to focus the editor on tab switch. */
 	visible?: boolean;
+	/** Client-side search function for instant @ mention results. */
+	searchFn?: (query: string, limit?: number) => import("@/lib/search-index").SearchIndexItem[];
 };
 
 export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
@@ -859,6 +861,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 			gatewaySessionId,
 			gatewayChannel: _gatewayChannel,
 			visible,
+			searchFn,
 		},
 		ref,
 	) {
@@ -2221,6 +2224,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 					}
 					disabled={loadingSession}
 					compact={compact}
+					searchFn={searchFn}
 				/>
 
 				<div className={`flex items-center justify-between ${compact ? "px-2 pb-1.5" : "px-3 pb-2.5"}`}>
@@ -2611,9 +2615,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 									className="inline-flex max-w-full items-center gap-1.5 px-1 py-1.5 dench-shimmer"
 									style={{ color: "var(--color-text-muted)" }}
 								>
-									<span className="text-xs font-mono font-semibold">
-										~/
-									</span>
+									{/* eslint-disable-next-line @next/next/no-img-element */}
+									<img src="/dench-workspace-icon.png" alt="" width={14} height={14} className="rounded-sm" />
 									<span className="text-xs truncate">
 										{streamActivityLabel}
 									</span>

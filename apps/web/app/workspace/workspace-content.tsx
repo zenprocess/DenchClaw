@@ -442,8 +442,18 @@ function WorkspacePageInner() {
     showHidden, setShowHidden,
   } = useWorkspaceWatcher();
 
+  // Track tree changes to refresh search index
+  const treeRefreshCount = useRef(0);
+  const [searchRefreshSignal, setSearchRefreshSignal] = useState(0);
+  useEffect(() => {
+    if (tree.length > 0) {
+      treeRefreshCount.current += 1;
+      setSearchRefreshSignal(treeRefreshCount.current);
+    }
+  }, [tree]);
+
   // Search index for @ mention fuzzy search (files + entries)
-  const { search: searchIndex } = useSearchIndex();
+  const { search: searchIndex } = useSearchIndex(searchRefreshSignal);
 
   const [context, setContext] = useState<WorkspaceContext | null>(null);
   const [activePath, setActivePath] = useState<string | null>(null);
@@ -2344,6 +2354,7 @@ function WorkspacePageInner() {
             onNavigateUp={handleNavigateUp}
             onGoHome={handleGoHome}
             onFileSearchSelect={(item) => { handleFileSearchSelect?.(item); setSidebarOpen(false); }}
+            searchFn={searchIndex}
             workspaceRoot={workspaceRoot}
             onGoToChat={() => { handleGoToChat(); setSidebarOpen(false); }}
             onExternalDrop={handleSidebarExternalDrop}
@@ -2416,6 +2427,7 @@ function WorkspacePageInner() {
                 onNavigateUp={handleNavigateUp}
                 onGoHome={handleGoHome}
                 onFileSearchSelect={handleFileSearchSelect}
+                searchFn={searchIndex}
                 workspaceRoot={workspaceRoot}
                 onGoToChat={handleGoToChat}
                 onExternalDrop={handleSidebarExternalDrop}
@@ -2764,6 +2776,7 @@ function WorkspacePageInner() {
                         gatewaySessionId={isGateway ? tab.sessionId : undefined}
                         gatewayChannel={isGateway ? tab.channel : undefined}
                         visible={isVisible}
+                        searchFn={searchIndex}
                       />
                     </div>
                   );
@@ -2962,6 +2975,7 @@ function WorkspacePageInner() {
                   onFilePathClick={handleFilePathClickFromChat}
                   onComposioAction={handleComposioActionFromChat}
                   onActiveSessionChange={setFileChatSessionId}
+                  searchFn={searchIndex}
                 />
               </div>
             </aside>
@@ -3026,6 +3040,7 @@ function WorkspacePageInner() {
                   onFilePathClick={(path) => { handleFilePathClickFromChat(path); setMobileFileChatOpen(false); }}
                   onComposioAction={(action) => { handleComposioActionFromChat(action); setMobileFileChatOpen(false); }}
                   onActiveSessionChange={setFileChatSessionId}
+                  searchFn={searchIndex}
                 />
               </div>
             </div>

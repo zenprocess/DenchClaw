@@ -21,6 +21,7 @@ import { ProfileSwitcher } from "./profile-switcher";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { UnicodeSpinner } from "../unicode-spinner";
 import { type WebSession, type SidebarSubagentInfo, type SidebarGatewaySession, type SidebarChannelStatus } from "./chat-sessions-sidebar";
+import type { SearchIndexItem } from "@/lib/search-index";
 
 /** Shape returned by /api/workspace/suggest-files */
 type SuggestItem = {
@@ -28,6 +29,14 @@ type SuggestItem = {
 	path: string;
 	type: "folder" | "file" | "document" | "database";
 };
+
+function indexItemToSuggestItem(item: SearchIndexItem): SuggestItem {
+	return {
+		name: item.label,
+		path: item.path ?? item.id,
+		type: (item.kind === "object" ? "folder" : item.nodeType ?? "file") as SuggestItem["type"],
+	};
+}
 
 type WorkspaceSidebarProps = {
 	tree: TreeNode[];
@@ -92,6 +101,8 @@ type WorkspaceSidebarProps = {
   onTabChange?: (tab: "files" | "chats") => void;
   /** Navigate to a sidebar section (cloud, integrations, skills, cron). */
   onNavigate?: (target: "cloud" | "integrations" | "skills" | "cron") => void;
+  /** Client-side search function from useSearchIndex for instant results. */
+  searchFn?: (query: string, limit?: number) => SearchIndexItem[];
 };
 
 function HomeIcon() {
@@ -175,37 +186,25 @@ function SuggestTypeIcon({ type }: { type: string }) {
 
 /* ─── File search (base-ui Combobox) ─── */
 
-function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
+function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => void; searchFn?: (query: string, limit?: number) => SearchIndexItem[] }) {
 	const [results, setResults] = useState<SuggestItem[]>([]);
-	const [loading, setLoading] = useState(false);
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const anchorRef = useRef<HTMLDivElement>(null);
 
 	const handleInputValueChange = useCallback((inputValue: string) => {
 		setQuery(inputValue);
-		if (timerRef.current) clearTimeout(timerRef.current);
 		if (!inputValue.trim()) {
 			setResults([]);
 			setOpen(false);
-			setLoading(false);
 			return;
 		}
-		setLoading(true);
-		timerRef.current = setTimeout(async () => {
-			try {
-				const res = await fetch(`/api/workspace/suggest-files?q=${encodeURIComponent(inputValue.trim())}`);
-				const data = await res.json();
-				setResults(data.items ?? []);
-				setOpen(true);
-			} catch {
-				setResults([]);
-			} finally {
-				setLoading(false);
-			}
-		}, 150);
-	}, []);
+		if (searchFn) {
+			const hits = searchFn(inputValue.trim(), 20);
+			setResults(hits.map(indexItemToSuggestItem));
+			setOpen(hits.length > 0);
+		}
+	}, [searchFn]);
 
 	return (
 		<Combobox
@@ -241,15 +240,6 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 						color: "var(--color-text)",
 					}}
 				/>
-				{loading && (
-					<span className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-						<UnicodeSpinner
-							name="braille"
-							className="text-sm"
-							style={{ color: "var(--color-text-muted)" }}
-						/>
-					</span>
-				)}
 			</div>
 			<ComboboxContent anchor={anchorRef}>
 				<ComboboxList>
@@ -267,7 +257,7 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 						</ComboboxItem>
 					))}
 				</ComboboxList>
-				{query.trim() && !loading && results.length === 0 && (
+				{query.trim() && results.length === 0 && (
 					<div className="py-3 text-center text-sm" style={{ color: "var(--color-text-muted)" }}>
 						No files found
 					</div>
@@ -300,6 +290,7 @@ export function WorkspaceSidebar({
   activeWorkspace,
   onWorkspaceChanged,
   onNavigate,
+  searchFn,
 }: WorkspaceSidebarProps) {
 	const isBrowsing = browseDir != null;
 	const width = mobile ? "280px" : (widthProp ?? 260);
@@ -398,7 +389,7 @@ export function WorkspaceSidebar({
 
 		{onFileSearchSelect && (
 			<div className="px-3">
-				<FileSearch onSelect={onFileSearchSelect} />
+				<FileSearch onSelect={onFileSearchSelect} searchFn={searchFn} />
 			</div>
 		)}
 

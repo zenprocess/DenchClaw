@@ -47,6 +47,8 @@ type ChatEditorProps = {
 	placeholder?: string;
 	disabled?: boolean;
 	compact?: boolean;
+	/** Client-side search function for instant @ mention results. */
+	searchFn?: (query: string, limit?: number) => import("@/lib/search-index").SearchIndexItem[];
 };
 
 // ── Helpers ──
@@ -135,7 +137,7 @@ function serializeContent(editor: ReturnType<typeof useEditor>): {
 
 // ── File mention suggestion extension (wired to the async popup) ──
 
-function createChatFileMentionSuggestion() {
+function createChatFileMentionSuggestion(searchFnRef?: React.RefObject<((query: string, limit?: number) => import("@/lib/search-index").SearchIndexItem[]) | null>) {
 	return Extension.create({
 		name: "chatFileMentionSuggestion",
 
@@ -186,7 +188,7 @@ function createChatFileMentionSuggestion() {
 						void query;
 						return [];
 					},
-					render: createFileMentionRenderer(),
+					render: createFileMentionRenderer(searchFnRef),
 				}),
 			];
 		},
@@ -196,15 +198,16 @@ function createChatFileMentionSuggestion() {
 // ── Main component ──
 
 export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
-	function ChatEditor({ onSubmit, onChange, onNativeFileDrop, placeholder, disabled, compact }, ref) {
+	function ChatEditor({ onSubmit, onChange, onNativeFileDrop, placeholder, disabled, compact, searchFn }, ref) {
 		const submitRef = useRef(onSubmit);
 		submitRef.current = onSubmit;
 
 		const nativeFileDropRef = useRef(onNativeFileDrop);
 		nativeFileDropRef.current = onNativeFileDrop;
 
-		// Ref to access the TipTap editor from within ProseMirror's handleDOMEvents
-		// (the handlers are defined at useEditor() call time, before the editor exists).
+		const searchFnRef = useRef(searchFn ?? null);
+		searchFnRef.current = searchFn ?? null;
+
 		const editorRefInternal = useRef<Editor | null>(null);
 
 		const editor = useEditor({
@@ -224,7 +227,7 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
 					showOnlyWhenEditable: false,
 				}),
 				FileMentionNode,
-				createChatFileMentionSuggestion(),
+				createChatFileMentionSuggestion(searchFnRef),
 			],
 			editorProps: {
 				attributes: {

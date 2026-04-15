@@ -162,18 +162,11 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 			},
 		}));
 
-	const dropdownStyle = {
-		background: "var(--color-glass)",
-		backdropFilter: "blur(16px)",
-		WebkitBackdropFilter: "blur(16px)",
-		border: "1px solid var(--color-glass-border)",
-		minWidth: 280,
-		maxWidth: 400,
-	} as const;
+	const dropdownClass = "bg-neutral-100/[0.67] dark:bg-neutral-900/[0.67] border border-white dark:border-white/10 backdrop-blur-md shadow-[0_0_25px_0_rgba(0,0,0,0.16)]";
 
 	if (loading) {
 		return (
-			<div className="rounded-3xl p-3 shadow-[0_0_25px_0_rgba(0,0,0,0.16)]" style={dropdownStyle}>
+			<div className={`rounded-3xl p-3 ${dropdownClass}`} style={{ minWidth: 280, maxWidth: 400 }}>
 				<span className="text-xs animate-pulse" style={{ color: "var(--color-text-muted)" }}>
 					Searching...
 				</span>
@@ -183,7 +176,7 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 
 	if (items.length === 0) {
 		return (
-			<div className="rounded-3xl p-3 shadow-[0_0_25px_0_rgba(0,0,0,0.16)] text-center" style={dropdownStyle}>
+			<div className={`rounded-3xl p-3 text-center ${dropdownClass}`} style={{ minWidth: 280, maxWidth: 400 }}>
 				<span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
 					No results found
 				</span>
@@ -194,8 +187,8 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 	return (
 		<div
 			ref={listRef}
-			className="rounded-3xl p-1 shadow-[0_0_25px_0_rgba(0,0,0,0.16)] overflow-y-auto thin-scrollbar"
-			style={{ ...dropdownStyle, maxHeight: 300 }}
+			className={`rounded-3xl p-1 overflow-y-auto thin-scrollbar ${dropdownClass}`}
+			style={{ minWidth: 280, maxWidth: 400, maxHeight: 300 }}
 		>
 		{items.map((item, index) => {
 			const category = getFileCategory(item.name, item.type);

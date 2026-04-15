@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import {
+	Combobox,
+	ComboboxInput,
+	ComboboxContent,
+	ComboboxList,
+	ComboboxItem,
+} from "../ui/combobox";
+import {
+	IconFolderFilled,
+	IconFileFilled,
+	IconDatabaseFilled,
+} from "@tabler/icons-react";
 import { GoTools } from "react-icons/go";
 import { RiApps2AiLine } from "react-icons/ri";
 import { useTheme } from "next-themes";
@@ -152,155 +164,83 @@ function SearchIcon() {
 	);
 }
 
-function SmallFolderIcon() {
-	return (
-		<img
-			src="/icons/folder.png"
-			alt=""
-			width={14}
-			height={14}
-			draggable={false}
-			style={{ flexShrink: 0 }}
-		/>
-	);
-}
-
-function SmallFileIcon() {
-	return (
-		<img src="/icons/document.png" alt="" width={14} height={14} draggable={false} style={{ flexShrink: 0, filter: "drop-shadow(0 0.5px 1.5px rgba(0,0,0,0.2))" }} />
-	);
-}
-
-function SmallDocIcon() {
-	return (
-		<img src="/icons/document.png" alt="" width={14} height={14} draggable={false} style={{ flexShrink: 0, filter: "drop-shadow(0 0.5px 1.5px rgba(0,0,0,0.2))" }} />
-	);
-}
-
-function SmallDbIcon() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-			<ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" />
-		</svg>
-	);
-}
-
 function SuggestTypeIcon({ type }: { type: string }) {
 	switch (type) {
-		case "folder": return <SmallFolderIcon />;
-		case "document": return <SmallDocIcon />;
-		case "database": return <SmallDbIcon />;
-		default: return <SmallFileIcon />;
+		case "folder": return <IconFolderFilled size={16} style={{ flexShrink: 0, color: "#60a5fa" }} />;
+		case "document": return <IconFileFilled size={16} style={{ flexShrink: 0, opacity: 0.7 }} />;
+		case "database": return <IconDatabaseFilled size={16} style={{ flexShrink: 0 }} />;
+		default: return <IconFileFilled size={16} style={{ flexShrink: 0, opacity: 0.7 }} />;
 	}
 }
 
-/* ─── File search ─── */
+/* ─── File search (base-ui Combobox) ─── */
 
 function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
-	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<SuggestItem[]>([]);
-	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [selectedIndex, setSelectedIndex] = useState(0);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState("");
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const anchorRef = useRef<HTMLDivElement>(null);
 
-	// Debounced fetch from the same suggest-files API that tiptap uses
-	useEffect(() => {
-		if (!query.trim()) {
+	const handleInputValueChange = useCallback((inputValue: string) => {
+		setQuery(inputValue);
+		if (timerRef.current) clearTimeout(timerRef.current);
+		if (!inputValue.trim()) {
 			setResults([]);
 			setOpen(false);
 			return;
 		}
-
 		setLoading(true);
-		const timer = setTimeout(async () => {
+		timerRef.current = setTimeout(async () => {
 			try {
-				const res = await fetch(
-					`/api/workspace/suggest-files?q=${encodeURIComponent(query.trim())}`,
-				);
+				const res = await fetch(`/api/workspace/suggest-files?q=${encodeURIComponent(inputValue.trim())}`);
 				const data = await res.json();
 				setResults(data.items ?? []);
 				setOpen(true);
-				setSelectedIndex(0);
 			} catch {
 				setResults([]);
 			} finally {
 				setLoading(false);
 			}
 		}, 150);
-
-		return () => clearTimeout(timer);
-	}, [query]);
-
-	// Click outside to close
-	useEffect(() => {
-		function handleClickOutside(e: MouseEvent) {
-			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-				setOpen(false);
-			}
-		}
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
 
-	const handleKeyDown = useCallback(
-		(e: React.KeyboardEvent) => {
-			if (e.key === "ArrowDown") {
-				e.preventDefault();
-				setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
-			} else if (e.key === "ArrowUp") {
-				e.preventDefault();
-				setSelectedIndex((i) => Math.max(i - 1, 0));
-			} else if (e.key === "Enter" && results[selectedIndex]) {
-				e.preventDefault();
-				onSelect(results[selectedIndex]);
-				setQuery("");
-				setOpen(false);
-				inputRef.current?.blur();
-			} else if (e.key === "Escape") {
-				setOpen(false);
-				setQuery("");
-				inputRef.current?.blur();
-			}
-		},
-		[results, selectedIndex, onSelect],
-	);
-
-	const handleSelect = useCallback(
-		(item: SuggestItem) => {
-			onSelect(item);
-			setQuery("");
-			setOpen(false);
-		},
-		[onSelect],
-	);
-
 	return (
-		<div ref={containerRef} className="relative">
-			<div className="relative">
+		<Combobox
+			value={null}
+			open={open}
+			onOpenChange={(isOpen) => {
+				if (!isOpen && !query.trim()) setOpen(false);
+			}}
+			onValueChange={(val) => {
+				if (val) {
+					onSelect(val as SuggestItem);
+					setOpen(false);
+					setQuery("");
+					setResults([]);
+				}
+			}}
+			onInputValueChange={handleInputValueChange}
+			filterOptions={null}
+		>
+			<div ref={anchorRef} className="relative">
 				<span
-					className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+					className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
 					style={{ color: "var(--color-text-muted)" }}
 				>
 					<SearchIcon />
 				</span>
-				<input
-					ref={inputRef}
-					type="text"
-					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					onKeyDown={handleKeyDown}
-					onFocus={() => { if (results.length > 0) {setOpen(true);} }}
+				<ComboboxInput
 					placeholder="Search"
-					className="w-full pl-9 pr-14 py-2 rounded-xl text-sm outline-none transition-colors"
+					className="w-full pl-9 pr-10 py-1.5 rounded-xl text-sm outline-none transition-colors"
 					style={{
 						background: "var(--color-surface-hover)",
 						color: "var(--color-text)",
 					}}
 				/>
 				{loading && (
-					<span className="absolute right-3 top-1/2 -translate-y-1/2">
+					<span className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
 						<UnicodeSpinner
 							name="braille"
 							className="text-sm"
@@ -309,55 +249,29 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 					</span>
 				)}
 			</div>
-
-			{open && results.length > 0 && (
-				<div
-					className="absolute left-0 right-0 mt-1 rounded-lg shadow-lg border overflow-hidden z-50 max-h-[300px] overflow-y-auto"
-					style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}
-				>
-					{results.map((item, i) => (
-						<button
-							key={item.path}
-							type="button"
-							onClick={() => handleSelect(item)}
-							className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs cursor-pointer transition-colors"
-							style={{
-								background: i === selectedIndex ? "var(--color-surface-hover)" : "transparent",
-								color: "var(--color-text)",
-							}}
-							onMouseEnter={() => setSelectedIndex(i)}
-						>
-							<span className="flex-shrink-0" style={{ color: "var(--color-text-muted)" }}>
+			<ComboboxContent anchor={anchorRef}>
+				<ComboboxList>
+					{results.map((item) => (
+						<ComboboxItem key={item.path} value={item}>
+							<span className="flex-shrink-0" style={{ color: "var(--color-text-muted)", opacity: 0.55 }}>
 								<SuggestTypeIcon type={item.type} />
 							</span>
 							<div className="min-w-0 flex-1">
 								<div className="truncate font-medium">{item.name}</div>
-								<div className="truncate" style={{ color: "var(--color-text-muted)", fontSize: "10px" }}>
+								<div className="truncate text-[10px]" style={{ color: "var(--color-text-muted)" }}>
 									{item.path.split("/").slice(0, -1).join("/")}
 								</div>
 							</div>
-							<span
-								className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 capitalize"
-								style={{ background: "var(--color-surface-hover)", color: "var(--color-text-muted)" }}
-							>
-								{item.type}
-							</span>
-						</button>
+						</ComboboxItem>
 					))}
-				</div>
-			)}
-
-			{open && query.trim() && !loading && results.length === 0 && (
-				<div
-					className="absolute left-0 right-0 mt-1 rounded-lg shadow-lg border z-50 px-3 py-3 text-center"
-					style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}
-				>
-					<p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+				</ComboboxList>
+				{query.trim() && !loading && results.length === 0 && (
+					<div className="py-3 text-center text-sm" style={{ color: "var(--color-text-muted)" }}>
 						No files found
-					</p>
-				</div>
-			)}
-		</div>
+					</div>
+				)}
+			</ComboboxContent>
+		</Combobox>
 	);
 }
 
@@ -416,8 +330,7 @@ export function WorkspaceSidebar({
 		>
 			{/* Header */}
 			<div
-				className="flex items-center gap-2 px-3 h-[36px] shrink-0 border-b"
-				style={{ borderColor: "var(--color-border)" }}
+				className="flex items-center gap-2 px-3 h-[52px] shrink-0"
 			>
 				{isBrowsing ? (
 					<>
@@ -426,7 +339,7 @@ export function WorkspaceSidebar({
 								<FolderOpenIcon />
 							</span>
 							<span
-								className="text-[12px] font-medium truncate"
+								className="text-[13px] font-semibold truncate"
 								style={{ color: "var(--color-text)" }}
 								title={browseDir}
 							>
@@ -437,8 +350,10 @@ export function WorkspaceSidebar({
 							<button
 								type="button"
 								onClick={onGoHome}
-								className="p-1 rounded-md shrink-0 transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
+								className="p-1.5 rounded-lg shrink-0 transition-colors"
 								style={{ color: "var(--color-text-muted)" }}
+								onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)"; }}
+								onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
 								title="Return to workspace"
 							>
 								<HomeIcon />
@@ -457,13 +372,15 @@ export function WorkspaceSidebar({
 									type="button"
 									onClick={onClick}
 									disabled={switching}
-									className="group/ws text-[12px] flex items-center gap-1.5 truncate w-full transition-colors font-medium rounded-md px-1.5 py-1 -mx-1.5 hover:bg-stone-200/60 dark:hover:bg-stone-700/60"
+									className="group/ws text-[13px] flex items-center gap-2 truncate w-full transition-colors font-semibold rounded-xl px-2 py-1.5"
 									style={{ color: "var(--color-text)" }}
+									onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)"; }}
+									onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
 									title="Switch workspace"
 								>
 									<span className="truncate">{orgName || "Workspace"}</span>
 									<span className="flex-1" />
-									<span className="px-1 py-px rounded text-[10px] leading-tight shrink-0 bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+									<span className="px-1.5 py-0.5 rounded-md text-[10px] leading-tight shrink-0 bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400">
 										{workspaceName || "-"}
 									</span>
 									<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" style={{ color: "var(--color-text-muted)" }}>
@@ -478,8 +395,10 @@ export function WorkspaceSidebar({
 					<button
 						type="button"
 						onClick={onCollapse}
-						className="p-1 rounded-md shrink-0 transition-colors hover:bg-stone-200 dark:hover:bg-stone-700"
+						className="p-1.5 rounded-lg shrink-0 transition-colors"
 						style={{ color: "var(--color-text-muted)" }}
+						onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
 						title="Hide sidebar (⌘B)"
 					>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -547,8 +466,10 @@ export function WorkspaceSidebar({
 						key={item.id}
 						type="button"
 						onClick={() => onNavigate(item.id)}
-						className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-stone-200/60 dark:hover:bg-stone-700/60 hover:[color:var(--color-text)]"
+						className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors"
 						style={{ color: "var(--color-text-secondary)" }}
+						onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)"; (e.currentTarget as HTMLElement).style.color = "var(--color-text)"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--color-text-secondary)"; }}
 					>
 						<span className="shrink-0">{item.icon}</span>
 						{item.label}

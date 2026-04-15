@@ -128,8 +128,8 @@ function isSystemFile(path: string, workspaceRoot?: string | null): boolean {
 
 function FolderIcon({ open }: { open?: boolean }) {
   return open
-    ? <IconFolderOpenFilled size={18} style={{ flexShrink: 0 }} />
-    : <IconFolderFilled size={18} style={{ flexShrink: 0 }} />;
+    ? <IconFolderOpenFilled size={18} style={{ flexShrink: 0, color: "#60a5fa" }} />
+    : <IconFolderFilled size={18} style={{ flexShrink: 0, color: "#60a5fa" }} />;
 }
 
 function TableIcon() {
@@ -141,11 +141,11 @@ function KanbanIcon() {
 }
 
 function DocumentIcon() {
-  return <IconFileFilled size={18} style={{ flexShrink: 0 }} />;
+  return <IconFileFilled size={18} style={{ flexShrink: 0, opacity: 0.7 }} />;
 }
 
 function FileIcon() {
-  return <IconFileFilled size={18} style={{ flexShrink: 0 }} />;
+  return <IconFileFilled size={18} style={{ flexShrink: 0, opacity: 0.7 }} />;
 }
 
 function DatabaseIcon() {
@@ -493,9 +493,9 @@ function DraggableNode({
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
-        className="w-full flex items-center gap-2 py-1.5 px-2 rounded-lg text-left text-sm transition-all duration-100 cursor-pointer select-none"
+        className="w-full flex items-center gap-2 py-1.5 px-2 rounded-xl text-left text-sm transition-all duration-100 cursor-pointer select-none"
         style={{
-          paddingLeft: `${depth * 20 + 10}px`,
+          paddingLeft: `${depth * 20 + 14}px`,
           background: showDropHighlight
             ? "var(--color-accent-light)"
             : isSelected || isActive
@@ -516,7 +516,7 @@ function DraggableNode({
           }
         }}
       >
-        <span className="flex-shrink-0 flex items-center" style={{ color: "var(--color-text-muted)", opacity: 0.52 }}>
+        <span className="flex-shrink-0 flex items-center" style={{ color: "var(--color-text-muted)", opacity: 0.55, filter: "drop-shadow(0 0.5px 1px rgba(0,0,0,0.15))" }}>
           <NodeIcon node={node} open={isExpanded} />
         </span>
 
@@ -1131,17 +1131,15 @@ export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact
             onKeyDown={handleKeyDown}
             onContextMenu={handleEmptyContextMenu}
           >
-            {/* ".." navigation entry for browsing up */}
             {parentDir != null && onNavigateUp && (
               <div
                 role="treeitem"
                 tabIndex={-1}
                 onClick={onNavigateUp}
-                className="w-full flex items-center gap-1.5 py-1 px-2 rounded-md text-left text-sm transition-all duration-100 cursor-pointer select-none"
+                className="w-full flex items-center gap-2 py-1.5 px-2 rounded-xl text-left text-sm transition-all duration-100 cursor-pointer select-none"
                 style={{
-                  paddingLeft: "8px",
+                  paddingLeft: "14px",
                   color: "var(--color-text-muted)",
-                  borderRadius: "6px",
                 }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)";
@@ -1150,15 +1148,12 @@ export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact
                   (e.currentTarget as HTMLElement).style.background = "transparent";
                 }}
               >
-                <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <span className="flex-shrink-0 flex items-center" style={{ opacity: 0.55 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m15 18-6-6 6-6" />
                   </svg>
                 </span>
-                <span className="flex-shrink-0 flex items-center" style={{ color: "var(--color-text-muted)" }}>
-                  <FolderIcon />
-                </span>
-                <span className="truncate flex-1">..</span>
+                <span className="truncate flex-1">Back</span>
               </div>
             )}
             {tree.map((node) => (

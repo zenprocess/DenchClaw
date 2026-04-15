@@ -189,6 +189,7 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 		if (!inputValue.trim()) {
 			setResults([]);
 			setOpen(false);
+			setLoading(false);
 			return;
 		}
 		setLoading(true);
@@ -211,7 +212,7 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 			value={null}
 			open={open}
 			onOpenChange={(isOpen) => {
-				if (!isOpen && !query.trim()) setOpen(false);
+				if (!isOpen) setOpen(false);
 			}}
 			onValueChange={(val) => {
 				if (val) {
@@ -223,6 +224,7 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 			}}
 			onInputValueChange={handleInputValueChange}
 			filterOptions={null}
+			itemToStringLabel={(item) => (item as SuggestItem).name}
 		>
 			<div ref={anchorRef} className="relative">
 				<span
@@ -288,7 +290,6 @@ export function WorkspaceSidebar({
 	onGoHome,
 	onFileSearchSelect,
 	workspaceRoot,
-	onGoToChat,
 	onExternalDrop,
 	mobile,
 	onClose,
@@ -298,20 +299,6 @@ export function WorkspaceSidebar({
 	onCollapse,
   activeWorkspace,
   onWorkspaceChanged,
-  chatSessions,
-  activeChatSessionId,
-  activeChatSessionTitle,
-  chatStreamingSessionIds,
-  chatSubagents,
-  chatActiveSubagentKey,
-  chatSessionsLoading,
-  onSelectChatSession,
-  onNewChatSession,
-  onSelectChatSubagent,
-  onDeleteChatSession,
-  onRenameChatSession,
-  activeTab: activeTabProp,
-  onTabChange,
   onNavigate,
 }: WorkspaceSidebarProps) {
 	const isBrowsing = browseDir != null;

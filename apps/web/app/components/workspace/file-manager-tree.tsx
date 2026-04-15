@@ -419,9 +419,7 @@ function DraggableNode({
   const isExpanded = isWorkspaceRoot ? false : expandedPaths.has(node.path);
   const isActive = activePath === node.path;
   const isSelected = selectedPath === node.path;
-  // Object rows open their table/detail view; only the chevron should expand
-  // their backing folder contents.
-  const shouldToggleOnClick = isExpandable && node.type !== "object";
+  const shouldToggleOnClick = isExpandable;
   const isRenaming = renamingPath === node.path;
   const isSysFile = isSystemFile(node.path, workspaceRoot);
   const isVirtual = isVirtualNode(node);

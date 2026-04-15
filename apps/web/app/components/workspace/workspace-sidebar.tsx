@@ -380,7 +380,7 @@ export function WorkspaceSidebar({
 								>
 									<span className="truncate">{orgName || "Workspace"}</span>
 									<span className="flex-1" />
-									<span className="px-1.5 py-0.5 rounded-md text-[10px] leading-tight shrink-0 bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-400">
+									<span className="px-2 py-0.5 rounded-lg text-[10px] leading-tight shrink-0 bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
 										{workspaceName || "-"}
 									</span>
 									<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" style={{ color: "var(--color-text-muted)" }}>
@@ -410,7 +410,7 @@ export function WorkspaceSidebar({
 			</div>
 
 		{onFileSearchSelect && (
-			<div className="px-3 pt-2 pb-1">
+			<div className="px-3 pb-1">
 				<FileSearch onSelect={onFileSearchSelect} />
 			</div>
 		)}
@@ -467,9 +467,9 @@ export function WorkspaceSidebar({
 						type="button"
 						onClick={() => onNavigate(item.id)}
 						className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors"
-						style={{ color: "var(--color-text-secondary)" }}
+						style={{ color: "var(--color-text-muted)" }}
 						onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)"; (e.currentTarget as HTMLElement).style.color = "var(--color-text)"; }}
-						onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--color-text-secondary)"; }}
+						onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--color-text-muted)"; }}
 					>
 						<span className="shrink-0">{item.icon}</span>
 						{item.label}

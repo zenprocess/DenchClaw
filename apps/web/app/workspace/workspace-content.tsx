@@ -1682,22 +1682,22 @@ function WorkspacePageInner() {
         type: item.type as TreeNode["type"],
       };
       if (item.type === "folder") {
-        // Navigate the sidebar into the folder and show it in the main panel.
-        // Children come from the live tree (same data source as the sidebar).
-        setBrowseDir(item.path);
+        if (browseDir != null) {
+          setBrowseDir(item.path);
+        }
         openTabForNode(node);
         setActivePath(item.path);
         setContent({ kind: "directory", node: { name: item.name, path: item.path, type: "folder" } });
       } else {
-        // Navigate the sidebar to the parent directory of the file
-        const parentOfFile = item.path.split("/").slice(0, -1).join("/") || "/";
-        setBrowseDir(parentOfFile);
-        // Open the file in the main panel
+        if (browseDir != null) {
+          const parentOfFile = item.path.split("/").slice(0, -1).join("/") || "/";
+          setBrowseDir(parentOfFile);
+        }
         openTabForNode(node);
         void loadContent(node);
       }
     },
-    [setBrowseDir, openTabForNode, loadContent],
+    [browseDir, setBrowseDir, openTabForNode, loadContent],
   );
 
   // Sync URL bar with active content / chat / browse / subagent / preview state.

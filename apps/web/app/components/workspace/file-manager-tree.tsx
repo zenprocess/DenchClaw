@@ -678,7 +678,25 @@ export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => loadExpandedPaths());
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   useEffect(() => {
-    if (activePath === null) setSelectedPath(null);
+    if (activePath === null) {
+      setSelectedPath(null);
+      return;
+    }
+    const parts = activePath.split("/");
+    if (parts.length > 1) {
+      setExpandedPaths((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+        for (let i = 1; i < parts.length; i++) {
+          const ancestor = parts.slice(0, i).join("/");
+          if (!next.has(ancestor)) {
+            next.add(ancestor);
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }
   }, [activePath]);
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);

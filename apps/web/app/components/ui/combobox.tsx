@@ -84,7 +84,7 @@ function ComboboxItem({
 		<ComboboxPrimitive.Item
 			data-slot="combobox-item"
 			className={cn(
-				"bg-transparent data-highlighted:bg-neutral-400/15 text-sm transition-all relative flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 outline-none select-none",
+				"bg-transparent data-highlighted:bg-neutral-400/15 text-sm transition-all relative flex w-full cursor-pointer items-center gap-2.5 rounded-2xl px-3 py-2 outline-none select-none",
 				"data-disabled:pointer-events-none data-disabled:opacity-50",
 				className,
 			)}

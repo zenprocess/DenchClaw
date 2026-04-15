@@ -8,7 +8,7 @@ import { FileManagerTree, type TreeNode } from "./file-manager-tree";
 import { ProfileSwitcher } from "./profile-switcher";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { UnicodeSpinner } from "../unicode-spinner";
-import { ChatSessionsSidebar, type WebSession, type SidebarSubagentInfo, type SidebarGatewaySession, type SidebarChannelStatus } from "./chat-sessions-sidebar";
+import { type WebSession, type SidebarSubagentInfo, type SidebarGatewaySession, type SidebarChannelStatus } from "./chat-sessions-sidebar";
 
 /** Shape returned by /api/workspace/suggest-files */
 type SuggestItem = {
@@ -84,16 +84,7 @@ type WorkspaceSidebarProps = {
 
 function HomeIcon() {
 	return (
-		<svg
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="2"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-		>
+		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 			<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
 			<polyline points="9 22 9 12 15 12 15 22" />
 		</svg>
@@ -102,28 +93,22 @@ function HomeIcon() {
 
 function FolderOpenIcon() {
 	return (
-		<img
-			src="/icons/folder-open.png"
-			alt=""
-			width={20}
-			height={20}
-			draggable={false}
-			style={{ flexShrink: 0 }}
-		/>
+		<img src="/icons/folder-open.png" alt="" width={20} height={20} draggable={false} style={{ flexShrink: 0 }} />
 	);
 }
 
-/* ─── Theme toggle ─── */
+/** Extract the directory name from an absolute path for display. */
+function dirDisplayName(dir: string): string {
+	if (dir === "/") {return "/";}
+	return dir.split("/").pop() || dir;
+}
 
 function ThemeToggle() {
 	const { resolvedTheme, setTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
-
 	if (!mounted) return <div className="w-[28px] h-[28px]" />;
-
 	const isDark = resolvedTheme === "dark";
-
 	return (
 		<button
 			type="button"
@@ -295,7 +280,7 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 		<div ref={containerRef} className="relative">
 			<div className="relative">
 				<span
-					className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+					className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
 					style={{ color: "var(--color-text-muted)" }}
 				>
 					<SearchIcon />
@@ -307,16 +292,15 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 					onChange={(e) => setQuery(e.target.value)}
 					onKeyDown={handleKeyDown}
 					onFocus={() => { if (results.length > 0) {setOpen(true);} }}
-					placeholder="Search files..."
-					className="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs outline-none transition-colors"
+					placeholder="Search"
+					className="w-full pl-9 pr-14 py-2 rounded-xl text-sm outline-none transition-colors"
 					style={{
-						background: "var(--color-bg)",
+						background: "var(--color-surface-hover)",
 						color: "var(--color-text)",
-						border: "1px solid var(--color-border)",
 					}}
 				/>
 				{loading && (
-					<span className="absolute right-2.5 top-1/2 -translate-y-1/2">
+					<span className="absolute right-3 top-1/2 -translate-y-1/2">
 						<UnicodeSpinner
 							name="braille"
 							className="text-sm"
@@ -377,12 +361,6 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 	);
 }
 
-/** Extract the directory name from an absolute path for display. */
-function dirDisplayName(dir: string): string {
-	if (dir === "/") {return "/";}
-	return dir.split("/").pop() || dir;
-}
-
 export function WorkspaceSidebar({
 	tree,
 	activePath,
@@ -425,13 +403,6 @@ export function WorkspaceSidebar({
 	const isBrowsing = browseDir != null;
 	const width = mobile ? "280px" : (widthProp ?? 260);
 	const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
-	const hasChatProps = chatSessions !== undefined;
-	const [internalTab, setInternalTab] = useState<"files" | "chats">(activeTabProp ?? "files");
-	const currentTab = activeTabProp ?? internalTab;
-	const setTab = useCallback((tab: "files" | "chats") => {
-		setInternalTab(tab);
-		onTabChange?.(tab);
-	}, [onTabChange]);
 
 	const sidebar = (
 		<aside
@@ -445,16 +416,13 @@ export function WorkspaceSidebar({
 		>
 			{/* Header */}
 			<div
-				className="flex items-center gap-2 px-3 h-[36px] border-b"
+				className="flex items-center gap-2 px-3 h-[36px] shrink-0 border-b"
 				style={{ borderColor: "var(--color-border)" }}
 			>
 				{isBrowsing ? (
 					<>
 						<div className="flex-1 min-w-0 flex items-center gap-1.5">
-							<span
-								className="shrink-0"
-								style={{ color: "var(--color-text-muted)" }}
-							>
+							<span className="shrink-0" style={{ color: "var(--color-text-muted)" }}>
 								<FolderOpenIcon />
 							</span>
 							<span
@@ -478,52 +446,33 @@ export function WorkspaceSidebar({
 						)}
 					</>
 				) : (
-					<>
-						<div className="flex-1 min-w-0">
-							<ProfileSwitcher
-								activeWorkspaceHint={activeWorkspace ?? null}
-								onWorkspaceSwitch={() => {
-									onWorkspaceChanged?.();
-								}}
-								onWorkspaceDelete={() => {
-									onWorkspaceChanged?.();
-								}}
-								onCreateWorkspace={() => {
-									setCreateWorkspaceOpen(true);
-								}}
-								trigger={({ onClick, activeWorkspace: workspaceName, switching }) => (
-									<button
-										type="button"
-										onClick={onClick}
-										disabled={switching}
-										className="group/ws text-[12px] flex items-center gap-1.5 truncate w-full transition-colors font-medium rounded-md px-1.5 py-1 -mx-1.5 hover:bg-stone-200/60 dark:hover:bg-stone-700/60"
-										style={{ color: "var(--color-text)" }}
-										title="Switch workspace"
-									>
-										<span className="truncate">{orgName || "Workspace"}</span>
-										<span className="flex-1" />
-										<span className="px-1 py-px rounded text-[10px] leading-tight shrink-0 bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
-											{workspaceName || "-"}
-										</span>
-										<svg
-											width="10"
-											height="10"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="2"
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											className="shrink-0"
-											style={{ color: "var(--color-text-muted)" }}
-										>
-											<path d="m6 9 6 6 6-6" />
-										</svg>
-									</button>
-								)}
-							/>
-						</div>
-					</>
+					<div className="flex-1 min-w-0">
+						<ProfileSwitcher
+							activeWorkspaceHint={activeWorkspace ?? null}
+							onWorkspaceSwitch={() => { onWorkspaceChanged?.(); }}
+							onWorkspaceDelete={() => { onWorkspaceChanged?.(); }}
+							onCreateWorkspace={() => { setCreateWorkspaceOpen(true); }}
+							trigger={({ onClick, activeWorkspace: workspaceName, switching }) => (
+								<button
+									type="button"
+									onClick={onClick}
+									disabled={switching}
+									className="group/ws text-[12px] flex items-center gap-1.5 truncate w-full transition-colors font-medium rounded-md px-1.5 py-1 -mx-1.5 hover:bg-stone-200/60 dark:hover:bg-stone-700/60"
+									style={{ color: "var(--color-text)" }}
+									title="Switch workspace"
+								>
+									<span className="truncate">{orgName || "Workspace"}</span>
+									<span className="flex-1" />
+									<span className="px-1 py-px rounded text-[10px] leading-tight shrink-0 bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
+										{workspaceName || "-"}
+									</span>
+									<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" style={{ color: "var(--color-text-muted)" }}>
+										<path d="m6 9 6 6 6-6" />
+									</svg>
+								</button>
+							)}
+						/>
+					</div>
 				)}
 				{onCollapse && (
 					<button
@@ -571,7 +520,6 @@ export function WorkspaceSidebar({
 				)}
 			</div>
 
-		{/* Navigation */}
 		{onNavigate && (
 			<div
 				className="px-2 py-1.5 border-t space-y-0.5"
@@ -579,7 +527,7 @@ export function WorkspaceSidebar({
 			>
 				{([
 					{ id: "cloud" as const, label: "Cloud", icon: (
-						<svg className="h-4 w-4 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 							<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
 						</svg>
 					)},
@@ -590,7 +538,7 @@ export function WorkspaceSidebar({
 						<GoTools className="h-4 w-4 shrink-0" aria-hidden />
 					)},
 					{ id: "cron" as const, label: "Cron", icon: (
-						<svg className="h-4 w-4 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 							<circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
 						</svg>
 					)},
@@ -609,58 +557,49 @@ export function WorkspaceSidebar({
 			</div>
 		)}
 
-		{/* Footer */}
 		<div
 			className="px-3 py-2.5 border-t flex items-center justify-between"
 			style={{ borderColor: "var(--color-border)" }}
 		>
-				<a
-					href="https://dench.com"
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm"
-					style={{ color: "var(--color-text-muted)" }}
-				>
-					dench.com{process.env.NEXT_PUBLIC_DENCHCLAW_VERSION ? ` (v${process.env.NEXT_PUBLIC_DENCHCLAW_VERSION})` : ""}
-				</a>
-				<div className="flex items-center gap-0.5">
-					{onToggleHidden && (
-						<button
-							type="button"
-							onClick={onToggleHidden}
-							className="p-1.5 rounded-lg transition-colors"
-							style={{ color: showHidden ? "var(--color-accent)" : "var(--color-text-muted)" }}
-							title={showHidden ? "Hide dotfiles" : "Show dotfiles"}
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							>
-								{showHidden ? (
-									<>
-										<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-										<circle cx="12" cy="12" r="3" />
-									</>
-								) : (
-									<>
-										<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-										<path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-										<path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-										<path d="m2 2 20 20" />
-									</>
-								)}
-							</svg>
-						</button>
-					)}
-					<ThemeToggle />
-				</div>
+			<a
+				href="https://dench.com"
+				target="_blank"
+				rel="noopener noreferrer"
+				className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm"
+				style={{ color: "var(--color-text-muted)" }}
+			>
+				dench.com{process.env.NEXT_PUBLIC_DENCHCLAW_VERSION ? ` (v${process.env.NEXT_PUBLIC_DENCHCLAW_VERSION})` : ""}
+			</a>
+			<div className="flex items-center gap-0.5">
+				{onToggleHidden && (
+					<button
+						type="button"
+						onClick={onToggleHidden}
+						className="p-1.5 rounded-lg transition-colors"
+						style={{ color: showHidden ? "var(--color-accent)" : "var(--color-text-muted)" }}
+						title={showHidden ? "Hide dotfiles" : "Show dotfiles"}
+					>
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+							{showHidden ? (
+								<>
+									<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+									<circle cx="12" cy="12" r="3" />
+								</>
+							) : (
+								<>
+									<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+									<path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+									<path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+									<path d="m2 2 20 20" />
+								</>
+							)}
+						</svg>
+					</button>
+				)}
+				<ThemeToggle />
 			</div>
+		</div>
+
 		</aside>
 	);
 

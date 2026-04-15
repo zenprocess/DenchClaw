@@ -1897,6 +1897,28 @@ label {
   animation: drawer-fade-in 200ms ease-out;
 }
 
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  overflow-y: overlay;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+.dark .thin-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 @keyframes dench-shimmer {
   0% {
     mask-position: 200% center;

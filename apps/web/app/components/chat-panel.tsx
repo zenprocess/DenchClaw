@@ -2152,7 +2152,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 			hasRunningSubagents,
 			lastMessage: lastMsg,
 		});
-		const showStreamActivity = isStreaming && !!streamActivityLabel;
+		const showStreamActivity = isStreaming && !!streamActivityLabel && !lastAssistantHasText;
 
 		const showHeroState = messages.length === 0 && (!compact || !fileContext) && !isSubagentMode && !loadingSession;
 
@@ -2608,18 +2608,12 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 						{showStreamActivity && (
 							<div className="py-3 min-w-0">
 								<div
-									className="inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1.5"
-									style={{
-										background: "var(--color-surface-hover)",
-										border: "1px solid var(--color-border)",
-										color: "var(--color-text-muted)",
-									}}
+									className="inline-flex max-w-full items-center gap-1.5 px-1 py-1.5 dench-shimmer"
+									style={{ color: "var(--color-text-muted)" }}
 								>
-									<UnicodeSpinner
-										name="braille"
-										className={`text-sm ${lastAssistantHasText ? "" : "opacity-90"}`}
-										style={{ color: "inherit" }}
-									/>
+									<span className="text-xs font-mono font-semibold">
+										~/
+									</span>
 									<span className="text-xs truncate">
 										{streamActivityLabel}
 									</span>
@@ -2697,7 +2691,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 				{!showHeroState && (
 					<div
 						className={`${compact ? "px-3 py-2" : "px-3 pb-3 pt-0 md:px-6 md:pb-5"} shrink-0 z-20`}
-						style={{ background: "var(--color-bg-glass)" }}
 					>
 						<div className={compact ? "" : "max-w-[720px] mx-auto"}>
 							{inputBarContainer(handleInputDragOver, handleInputDragLeave, handleInputDrop)}

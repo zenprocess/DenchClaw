@@ -99,47 +99,47 @@
 }
 
 .dark {
-  /* Background / Surface */
-  --color-bg: #1a1a19;
-  --color-surface: #222221;
-  --color-sidebar-bg: #1a1a19;
-  --color-main-bg: #222221;
-  --color-surface-hover: #2c2c2a;
-  --color-surface-raised: #2a2a28;
+  /* Background / Surface — warm neutral, layered for depth */
+  --color-bg: #242424;
+  --color-surface: #2e2e2e;
+  --color-sidebar-bg: #242424;
+  --color-main-bg: #242424;
+  --color-surface-hover: #383838;
+  --color-surface-raised: #333333;
 
   /* Borders */
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-border-strong: rgba(255, 255, 255, 0.20);
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-border-strong: rgba(255, 255, 255, 0.25);
 
-  /* Text */
-  --color-text: #ececea;
-  --color-text-secondary: #c8c8c0;
-  --color-text-muted: #9c9b93;
+  /* Text — high contrast, clear hierarchy */
+  --color-text: #f5f5f5;
+  --color-text-secondary: #b0b0b0;
+  --color-text-muted: #8e8e8e;
 
   /* Accent */
-  --color-accent: #0065A2;
-  --color-accent-hover: #3B9FD6;
-  --color-accent-light: rgba(0, 101, 162, 0.12);
+  --color-accent: #0a84ff;
+  --color-accent-hover: #409cff;
+  --color-accent-light: rgba(10, 132, 255, 0.15);
 
   /* Chat */
-  --color-user-bubble: #2c2c2a;
-  --color-user-bubble-text: #ececea;
-  --color-chat-input-bg: #2c2c2a;
-  /* Chat sidebar (right) — stone-style selected/active, dark theme */
-  --color-chat-sidebar-active-bg: #2c2c2a;
-  --color-chat-sidebar-active-text: #ececea;
-  --color-chat-sidebar-muted: #9c9b93;
+  --color-user-bubble: #333333;
+  --color-user-bubble-text: #f5f5f5;
+  --color-chat-input-bg: #2e2e2e;
+  /* Chat sidebar (right) — selected/active */
+  --color-chat-sidebar-active-bg: #383838;
+  --color-chat-sidebar-active-text: #f5f5f5;
+  --color-chat-sidebar-muted: #8e8e8e;
 
-  /* Semantic */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
+  /* Semantic — Apple system colors for dark */
+  --color-success: #30d158;
+  --color-warning: #ffd60a;
+  --color-error: #ff453a;
+  --color-info: #0a84ff;
 
   /* Glassmorphism */
-  --color-glass: rgba(30, 30, 29, 0.80);
-  --color-glass-border: rgba(255, 255, 255, 0.10);
-  --color-bg-glass: rgba(30, 30, 29, 0.85);
+  --color-glass: rgba(46, 46, 46, 0.85);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  --color-bg-glass: rgba(46, 46, 46, 0.90);
 
   /* Object type chips */
   --color-chip-object: rgba(59, 130, 246, 0.12);
@@ -1895,6 +1895,27 @@ label {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(2px);
   animation: drawer-fade-in 200ms ease-out;
+}
+
+@keyframes dench-shimmer {
+  0% {
+    mask-position: 200% center;
+  }
+  100% {
+    mask-position: -200% center;
+  }
+}
+
+.dench-shimmer {
+  mask-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 1) 45%,
+    rgba(0, 0, 0, 1) 55%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  mask-size: 300% 100%;
+  animation: dench-shimmer 3s linear infinite;
 }
 
 @keyframes drawer-fade-in {

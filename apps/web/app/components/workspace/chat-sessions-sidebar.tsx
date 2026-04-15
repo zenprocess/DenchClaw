@@ -292,20 +292,21 @@ function WebSessionRow({
 	onSelectSubagent?: (key: string) => void; onStopSubagent?: (key: string) => void;
 	showFilePath?: boolean;
 }) {
-	const showMore = isHovered || isStreaming;
+	const [ctxOpen, setCtxOpen] = useState(false);
+	const showMore = isHovered || isStreaming || ctxOpen;
+	const highlighted = isHovered || ctxOpen;
 	const hasContextActions = !!(onStartRename || onDelete);
 	const rowContent = (
 		<div
 			className="group relative"
 			onMouseEnter={() => onHover(session.id)}
-			onMouseLeave={onLeave}
-			onContextMenu={() => onHover(session.id)}
+			onMouseLeave={() => { if (!ctxOpen) onLeave(); }}
 		>
 			<div
 				className="flex items-stretch w-full rounded-xl"
 				style={{
 					background: isActive ? "var(--color-chat-sidebar-active-bg)"
-						: isHovered ? "var(--color-surface-hover)" : "transparent",
+						: highlighted ? "var(--color-surface-hover)" : "transparent",
 				}}
 			>
 				{renamingId === session.id ? (
@@ -412,7 +413,7 @@ function WebSessionRow({
 	if (!hasContextActions) return rowContent;
 
 	return (
-		<ContextMenu>
+		<ContextMenu onOpenChange={(open) => { setCtxOpen(open); if (!open) onLeave(); }}>
 			<ContextMenuTrigger asChild>
 				{rowContent}
 			</ContextMenuTrigger>

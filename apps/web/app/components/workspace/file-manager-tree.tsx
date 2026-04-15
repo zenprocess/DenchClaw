@@ -682,6 +682,7 @@ export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact
       setSelectedPath(null);
       return;
     }
+    setSelectedPath(null);
     const relativePath = workspaceRoot && activePath.startsWith(workspaceRoot + "/")
       ? activePath.slice(workspaceRoot.length + 1)
       : activePath;

@@ -159,7 +159,8 @@ function createChatFileMentionSuggestion() {
 						const mentionType =
 							props.type === "object" ? "object"
 								: props.type === "entry" ? "entry"
-									: "file";
+									: props.type === "folder" ? "folder"
+										: "file";
 
 						editor
 							.chain()

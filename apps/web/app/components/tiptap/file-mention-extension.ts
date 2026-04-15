@@ -70,13 +70,14 @@ export const FileMentionNode = Node.create({
 
 	renderHTML({ HTMLAttributes }) {
 		const label = (HTMLAttributes.label as string) || "file";
-		const mType = HTMLAttributes.mentionType as string | undefined;
+		const mType = (HTMLAttributes.mentionType as string) || "file";
 		const colors = mentionColors(label, mType);
 		return [
 			"span",
 			mergeAttributes(
 				{
 					"data-chat-file-mention": "",
+					"data-mention-type": mType,
 					class: "chat-file-mention",
 					style: `--mention-bg: ${colors.bg}; --mention-fg: ${colors.fg};`,
 					title: HTMLAttributes.path || "",

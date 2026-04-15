@@ -15,6 +15,7 @@ import {
 	IconFileFilled,
 	IconDatabaseFilled,
 	IconTableFilled,
+	IconLayoutKanbanFilled,
 	IconPhoto,
 	IconVideo,
 	IconMusic,
@@ -32,6 +33,7 @@ type SuggestItem = {
 	icon?: string;
 	objectName?: string;
 	entryId?: string;
+	defaultView?: "table" | "kanban";
 };
 
 export type FileMentionListRef = {
@@ -89,7 +91,7 @@ const categoryColors: Record<string, { bg: string; fg: string }> = {
 	other: { bg: "rgba(107, 114, 128, 0.08)", fg: "#9ca3af" },
 };
 
-function MentionIcon({ category }: { category: string }) {
+function MentionIcon({ category, defaultView }: { category: string; defaultView?: string }) {
 	const s = { flexShrink: 0 } as const;
 	switch (category) {
 		case "folder": return <IconFolderFilled size={18} style={{ ...s, color: "#60a5fa" }} />;
@@ -99,7 +101,9 @@ function MentionIcon({ category }: { category: string }) {
 		case "pdf": return <IconFileFilled size={18} style={{ ...s, color: "#ef4444" }} />;
 		case "code": return <IconCode size={18} style={{ ...s, color: "#3b82f6" }} />;
 		case "database": return <IconDatabaseFilled size={18} style={s} />;
-		case "object": return <IconTableFilled size={18} style={{ ...s, color: "#42a97a" }} />;
+		case "object": return defaultView === "kanban"
+			? <IconLayoutKanbanFilled size={18} style={{ ...s, color: "#8b7cf6" }} />
+			: <IconTableFilled size={18} style={{ ...s, color: "#42a97a" }} />;
 		case "entry": return <IconUserFilled size={18} style={{ ...s, color: "#22c55e" }} />;
 		case "document": return <IconFileFilled size={18} style={{ ...s, opacity: 0.7 }} />;
 		default: return <IconFileFilled size={18} style={{ ...s, opacity: 0.7 }} />;
@@ -200,7 +204,7 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 			const sublabel = item.type === "entry" && item.objectName
 				? item.objectName
 				: isDbItem
-					? item.type
+					? (item.defaultView === "kanban" ? "Board" : "Table")
 					: shortenPath(item.path);
 
 			return (
@@ -216,7 +220,7 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 						{hasEmoji ? (
 							<span className="text-[15px] leading-none">{item.icon}</span>
 						) : (
-							<MentionIcon category={category} />
+							<MentionIcon category={category} defaultView={item.defaultView} />
 						)}
 					</span>
 					<div className="min-w-0 flex-1">

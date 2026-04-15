@@ -174,6 +174,7 @@ function createChatFileMentionSuggestion() {
 										path: props.path,
 										mentionType,
 										objectName: props.objectName ?? "",
+										defaultView: props.defaultView ?? "",
 									},
 								},
 								{ type: "text", text: " " },
@@ -457,7 +458,7 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
 						height: 0;
 						pointer-events: none;
 					}
-					/* File mention pill styles */
+					/* File mention pill styles — inherits icon from global span[data-chat-file-mention]::before */
 					.chat-editor-content span[data-chat-file-mention] {
 						display: inline-flex;
 						align-items: center;
@@ -465,8 +466,8 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
 						padding: 1px 8px 1px 6px;
 						margin: 0 1px;
 						border-radius: 6px;
-						background: var(--mention-bg, rgba(59, 130, 246, 0.12));
-						color: var(--mention-fg, #3b82f6);
+						background: var(--mention-bg, rgba(120, 113, 108, 0.1));
+						color: inherit;
 						font-size: 12px;
 						font-weight: 500;
 						line-height: 1.6;
@@ -475,11 +476,6 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
 						user-select: all;
 						white-space: nowrap;
 						transition: opacity 0.15s ease;
-					}
-					.chat-editor-content span[data-chat-file-mention]::before {
-						content: "@";
-						opacity: 0.5;
-						font-size: 11px;
 					}
 					.chat-editor-content span[data-chat-file-mention]:hover {
 						opacity: 0.85;
@@ -497,11 +493,9 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
  * Helper to extract file mention info for styling (used by renderHTML).
  * Returns CSS custom properties for the mention pill.
  */
-export function getMentionStyle(label: string): React.CSSProperties {
-	const category = getFileCategory(label);
-	const colors = categoryColors[category] ?? categoryColors.other;
+export function getMentionStyle(_label: string): React.CSSProperties {
 	return {
-		"--mention-bg": colors.bg,
-		"--mention-fg": colors.fg,
+		"--mention-bg": "rgba(120, 113, 108, 0.1)",
+		"--mention-fg": "inherit",
 	} as React.CSSProperties;
 }

@@ -100,21 +100,21 @@
 
 .dark {
   /* Background / Surface */
-  --color-bg: #0c0c0b;
-  --color-surface: #161615;
-  --color-sidebar-bg: #0c0c0b;
-  --color-main-bg: #161615;
-  --color-surface-hover: #1e1e1c;
-  --color-surface-raised: #1a1a18;
+  --color-bg: #1a1a19;
+  --color-surface: #222221;
+  --color-sidebar-bg: #1a1a19;
+  --color-main-bg: #222221;
+  --color-surface-hover: #2c2c2a;
+  --color-surface-raised: #2a2a28;
 
   /* Borders */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.20);
 
   /* Text */
   --color-text: #ececea;
-  --color-text-secondary: #b8b8b0;
-  --color-text-muted: #78776f;
+  --color-text-secondary: #c8c8c0;
+  --color-text-muted: #9c9b93;
 
   /* Accent */
   --color-accent: #0065A2;
@@ -122,13 +122,13 @@
   --color-accent-light: rgba(0, 101, 162, 0.12);
 
   /* Chat */
-  --color-user-bubble: #1e1e1c;
+  --color-user-bubble: #2c2c2a;
   --color-user-bubble-text: #ececea;
-  --color-chat-input-bg: #1e1e1c;
+  --color-chat-input-bg: #2c2c2a;
   /* Chat sidebar (right) — stone-style selected/active, dark theme */
-  --color-chat-sidebar-active-bg: #1e1e1c;
+  --color-chat-sidebar-active-bg: #2c2c2a;
   --color-chat-sidebar-active-text: #ececea;
-  --color-chat-sidebar-muted: #78776f;
+  --color-chat-sidebar-muted: #9c9b93;
 
   /* Semantic */
   --color-success: #22c55e;
@@ -137,9 +137,9 @@
   --color-info: #3b82f6;
 
   /* Glassmorphism */
-  --color-glass: rgba(22, 22, 21, 0.72);
-  --color-glass-border: rgba(255, 255, 255, 0.06);
-  --color-bg-glass: rgba(22, 22, 21, 0.8);
+  --color-glass: rgba(30, 30, 29, 0.80);
+  --color-glass-border: rgba(255, 255, 255, 0.10);
+  --color-bg-glass: rgba(30, 30, 29, 0.85);
 
   /* Object type chips */
   --color-chip-object: rgba(59, 130, 246, 0.12);

@@ -499,7 +499,7 @@ function DraggableNode({
             : isSelected || isActive
               ? "var(--color-surface-hover)"
               : "transparent",
-          color: isActive || isSelected ? "var(--color-text)" : "var(--color-text-muted)",
+          color: isActive || isSelected ? "var(--color-text)" : "var(--color-text-secondary)",
           outline: showDropHighlight ? "1px dashed var(--color-accent)" : "none",
           outlineOffset: "-1px",
         }}

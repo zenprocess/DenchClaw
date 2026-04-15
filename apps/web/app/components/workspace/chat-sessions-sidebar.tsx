@@ -299,6 +299,7 @@ function WebSessionRow({
 			className="group relative"
 			onMouseEnter={() => onHover(session.id)}
 			onMouseLeave={onLeave}
+			onContextMenu={() => onHover(session.id)}
 		>
 			<div
 				className="flex items-stretch w-full rounded-xl"

@@ -294,7 +294,7 @@ function WebSessionRow({
 			onMouseLeave={onLeave}
 		>
 			<div
-				className="flex items-stretch w-full rounded-lg"
+				className="flex items-stretch w-full rounded-xl"
 				style={{
 					background: isActive ? "var(--color-chat-sidebar-active-bg)"
 						: isHovered ? "var(--color-surface-hover)" : "transparent",

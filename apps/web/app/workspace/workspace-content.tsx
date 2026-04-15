@@ -2331,7 +2331,7 @@ function WorkspacePageInner() {
         sidebarOpen && (
           <WorkspaceSidebar
             tree={enhancedTree}
-            activePath={activePath}
+            activePath={activeTab.type === "chat" || activeTab.type === "gateway-chat" ? null : activePath}
             onSelect={(node) => { handleNodeSelect(node); setSidebarOpen(false); }}
             onRefresh={refreshTree}
             orgName={context?.organization?.name}
@@ -2403,7 +2403,7 @@ function WorkspacePageInner() {
               />
               <WorkspaceSidebar
                 tree={enhancedTree}
-                activePath={activePath}
+                activePath={activeTab.type === "chat" || activeTab.type === "gateway-chat" ? null : activePath}
                 onSelect={handleNodeSelect}
                 onRefresh={refreshTree}
                 orgName={context?.organization?.name}

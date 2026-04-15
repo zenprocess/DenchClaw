@@ -677,6 +677,9 @@ function saveExpandedPaths(paths: Set<string>) {
 export function FileManagerTree({ tree, activePath, onSelect, onRefresh, compact, parentDir, onNavigateUp, browseDir: _browseDir, workspaceRoot, onExternalDrop }: FileManagerTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => loadExpandedPaths());
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  useEffect(() => {
+    if (activePath === null) setSelectedPath(null);
+  }, [activePath]);
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<TreeNode | null>(null);

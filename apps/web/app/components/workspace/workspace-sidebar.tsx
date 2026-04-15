@@ -258,7 +258,7 @@ function FileSearch({ onSelect }: { onSelect: (item: SuggestItem) => void }) {
 							</span>
 							<div className="min-w-0 flex-1">
 								<div className="truncate font-medium">{item.name}</div>
-								<div className="truncate text-[10px]" style={{ color: "var(--color-text-muted)" }}>
+								<div className="truncate text-xs" style={{ color: "var(--color-text-muted)" }}>
 									{item.path.split("/").slice(0, -1).join("/")}
 								</div>
 							</div>
@@ -410,7 +410,7 @@ export function WorkspaceSidebar({
 			</div>
 
 		{onFileSearchSelect && (
-			<div className="px-3 pb-1">
+			<div className="px-3">
 				<FileSearch onSelect={onFileSearchSelect} />
 			</div>
 		)}
@@ -466,7 +466,7 @@ export function WorkspaceSidebar({
 						key={item.id}
 						type="button"
 						onClick={() => onNavigate(item.id)}
-						className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-sm font-medium transition-colors"
+						className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-sm font-medium transition-colors"
 						style={{ color: "var(--color-text-muted)" }}
 						onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--color-surface-hover)"; (e.currentTarget as HTMLElement).style.color = "var(--color-text)"; }}
 						onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--color-text-muted)"; }}

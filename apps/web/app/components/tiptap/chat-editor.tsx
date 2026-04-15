@@ -84,13 +84,6 @@ const categoryColors: Record<string, { bg: string; fg: string }> = {
 	other: { bg: "rgba(107, 114, 128, 0.10)", fg: "#9ca3af" },
 };
 
-function shortenPath(path: string): string {
-	return path
-		.replace(/^\/Users\/[^/]+/, "~")
-		.replace(/^\/home\/[^/]+/, "~")
-		.replace(/^[A-Z]:\\Users\\[^\\]+/, "~");
-}
-
 /**
  * Serialize the editor content to plain text with mention markers.
  * Returns { text, mentionedFiles }.
@@ -163,19 +156,6 @@ function createChatFileMentionSuggestion() {
 						range: { from: number; to: number };
 						props: SuggestItem;
 					}) => {
-						// For folders: update the query text to navigate into the folder
-						if (props.type === "folder") {
-							const shortPath = shortenPath(props.path);
-							editor
-								.chain()
-								.focus()
-								.deleteRange(range)
-								.insertContent(`@${shortPath}/`)
-								.run();
-							return;
-						}
-
-						// Determine mention type for objects/entries
 						const mentionType =
 							props.type === "object" ? "object"
 								: props.type === "entry" ? "entry"

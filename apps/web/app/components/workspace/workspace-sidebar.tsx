@@ -214,7 +214,7 @@ function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => v
 		if (searchFn) {
 			const hits = searchFn(inputValue.trim(), 20);
 			setResults(hits.map(indexItemToSuggestItem));
-			setOpen(hits.length > 0);
+			setOpen(true);
 		} else {
 			if (timerRef.current) clearTimeout(timerRef.current);
 			timerRef.current = setTimeout(async () => {

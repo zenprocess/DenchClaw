@@ -153,7 +153,7 @@ function flattenTree(
 
       items.push({
         id: relPath,
-        label: entry.name.replace(/\.md$/, ""),
+        label: entry.name,
         sublabel: relPath,
         kind: "file",
         path: relPath,

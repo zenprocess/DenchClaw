@@ -31,9 +31,11 @@ type SuggestItem = {
 };
 
 function indexItemToSuggestItem(item: SearchIndexItem): SuggestItem {
+	const fullPath = item.path ?? item.id;
+	const fileName = fullPath.split("/").pop() ?? item.label;
 	return {
-		name: item.label,
-		path: item.path ?? item.id,
+		name: item.kind === "object" ? item.label : fileName,
+		path: fullPath,
 		type: (item.kind === "object" ? "folder" : item.nodeType ?? "file") as SuggestItem["type"],
 	};
 }

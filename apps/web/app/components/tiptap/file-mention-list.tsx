@@ -344,9 +344,11 @@ export function createFileMentionRenderer(searchFnRef?: React.RefObject<((query:
 		}
 
 		function indexItemToSuggest(item: SearchIndexItem): SuggestItem {
+			const fullPath = item.path ?? item.id;
+			const fileName = fullPath.split("/").pop() ?? item.label;
 			return {
-				name: item.label,
-				path: item.path ?? item.id,
+				name: item.kind === "object" || item.kind === "entry" ? item.label : fileName,
+				path: fullPath,
 				type: (item.kind === "entry" ? "entry" : item.kind === "object" ? "object" : item.nodeType ?? "file") as SuggestItem["type"],
 				icon: item.icon,
 				objectName: item.objectName,

@@ -53,39 +53,6 @@ type ChatEditorProps = {
 
 // ── Helpers ──
 
-function getFileCategory(name: string): string {
-	const ext = name.split(".").pop()?.toLowerCase() ?? "";
-	if (
-		["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "ico", "tiff", "heic"].includes(ext)
-	)
-		{return "image";}
-	if (["mp4", "webm", "mov", "avi", "mkv", "flv"].includes(ext)) {return "video";}
-	if (["mp3", "wav", "ogg", "aac", "flac", "m4a"].includes(ext)) {return "audio";}
-	if (ext === "pdf") {return "pdf";}
-	if (
-		[
-			"js", "ts", "tsx", "jsx", "py", "rb", "go", "rs", "java",
-			"cpp", "c", "h", "css", "html", "json", "yaml", "yml",
-			"toml", "md", "sh", "bash", "sql", "swift", "kt",
-		].includes(ext)
-	)
-		{return "code";}
-	if (["doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "csv"].includes(ext))
-		{return "document";}
-	return "other";
-}
-
-const categoryColors: Record<string, { bg: string; fg: string }> = {
-	image: { bg: "rgba(16, 185, 129, 0.15)", fg: "#10b981" },
-	video: { bg: "rgba(139, 92, 246, 0.15)", fg: "#8b5cf6" },
-	audio: { bg: "rgba(245, 158, 11, 0.15)", fg: "#f59e0b" },
-	pdf: { bg: "rgba(239, 68, 68, 0.15)", fg: "#ef4444" },
-	code: { bg: "rgba(59, 130, 246, 0.15)", fg: "#3b82f6" },
-	document: { bg: "rgba(107, 114, 128, 0.15)", fg: "#6b7280" },
-	folder: { bg: "rgba(245, 158, 11, 0.15)", fg: "#f59e0b" },
-	other: { bg: "rgba(107, 114, 128, 0.10)", fg: "#9ca3af" },
-};
-
 /**
  * Serialize the editor content to plain text with mention markers.
  * Returns { text, mentionedFiles }.
@@ -492,13 +459,3 @@ export const ChatEditor = forwardRef<ChatEditorHandle, ChatEditorProps>(
 	},
 );
 
-/**
- * Helper to extract file mention info for styling (used by renderHTML).
- * Returns CSS custom properties for the mention pill.
- */
-export function getMentionStyle(_label: string): React.CSSProperties {
-	return {
-		"--mention-bg": "rgba(120, 113, 108, 0.1)",
-		"--mention-fg": "inherit",
-	} as React.CSSProperties;
-}

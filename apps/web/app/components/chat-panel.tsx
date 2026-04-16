@@ -2155,7 +2155,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 			hasRunningSubagents,
 			lastMessage: lastMsg,
 		});
-		const showStreamActivity = isStreaming && !!streamActivityLabel && !lastAssistantHasText;
+		const showStreamActivity = isStreaming && !!streamActivityLabel;
 
 		const showHeroState = messages.length === 0 && (!compact || !fileContext) && !isSubagentMode && !loadingSession;
 

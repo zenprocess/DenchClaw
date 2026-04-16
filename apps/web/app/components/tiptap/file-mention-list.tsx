@@ -78,19 +78,6 @@ function getFileCategory(name: string, type: string): FileCategory {
 	return "other";
 }
 
-const categoryColors: Record<string, { bg: string; fg: string }> = {
-	folder: { bg: "rgba(245, 158, 11, 0.12)", fg: "#f59e0b" },
-	image: { bg: "rgba(16, 185, 129, 0.12)", fg: "#10b981" },
-	video: { bg: "rgba(139, 92, 246, 0.12)", fg: "#8b5cf6" },
-	audio: { bg: "rgba(245, 158, 11, 0.12)", fg: "#f59e0b" },
-	pdf: { bg: "rgba(239, 68, 68, 0.12)", fg: "#ef4444" },
-	code: { bg: "rgba(59, 130, 246, 0.12)", fg: "#3b82f6" },
-	document: { bg: "rgba(107, 114, 128, 0.12)", fg: "#6b7280" },
-	database: { bg: "rgba(168, 85, 247, 0.12)", fg: "#a855f7" },
-	object: { bg: "rgba(14, 165, 233, 0.12)", fg: "#0ea5e9" },
-	entry: { bg: "rgba(34, 197, 94, 0.12)", fg: "#22c55e" },
-	other: { bg: "rgba(107, 114, 128, 0.08)", fg: "#9ca3af" },
-};
 
 function MentionIcon({ category, defaultView }: { category: string; defaultView?: string }) {
 	const s = { flexShrink: 0 } as const;
@@ -192,7 +179,6 @@ const FileMentionList = forwardRef<FileMentionListRef, FileMentionListProps>(
 		>
 		{items.map((item, index) => {
 			const category = getFileCategory(item.name, item.type);
-			const colors = categoryColors[category] ?? categoryColors.other;
 			const hasEmoji = item.icon && /\p{Emoji_Presentation}/u.test(item.icon);
 			const isDbItem = item.type === "object" || item.type === "entry";
 			const sublabel = item.type === "entry" && item.objectName

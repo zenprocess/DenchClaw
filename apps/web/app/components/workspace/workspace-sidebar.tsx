@@ -193,7 +193,12 @@ function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => v
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const justSelectedRef = useRef(false);
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const anchorRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+	}, []);
 
 	const handleInputValueChange = useCallback((inputValue: string) => {
 		if (justSelectedRef.current) {
@@ -210,6 +215,18 @@ function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => v
 			const hits = searchFn(inputValue.trim(), 20);
 			setResults(hits.map(indexItemToSuggestItem));
 			setOpen(hits.length > 0);
+		} else {
+			if (timerRef.current) clearTimeout(timerRef.current);
+			timerRef.current = setTimeout(async () => {
+				try {
+					const res = await fetch(`/api/workspace/suggest-files?q=${encodeURIComponent(inputValue.trim())}`);
+					const data = await res.json();
+					setResults(data.items ?? []);
+					setOpen(true);
+				} catch {
+					setResults([]);
+				}
+			}, 150);
 		}
 	}, [searchFn]);
 

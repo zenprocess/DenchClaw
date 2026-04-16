@@ -1,4 +1,4 @@
-import { spawn, execFileSync, execSync } from "node:child_process";
+import { spawn, execFileSync, execSync, type ChildProcess } from "node:child_process";
 import {
   cpSync,
   existsSync,
@@ -170,6 +170,18 @@ function platformSpawnOptions(): { shell: boolean; windowsHide: boolean } {
   return { shell: IS_WINDOWS, windowsHide: IS_WINDOWS };
 }
 
+function killChildProcessTree(child: ChildProcess): void {
+  if (IS_WINDOWS && child.pid != null) {
+    try {
+      execSync(`taskkill /pid ${child.pid} /f /t`, { stdio: "ignore", windowsHide: true });
+      return;
+    } catch {
+      // fall through to child.kill
+    }
+  }
+  child.kill("SIGKILL");
+}
+
 function isProcessAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -184,9 +196,8 @@ async function terminatePidWithEscalation(pid: number): Promise<void> {
   if (IS_WINDOWS) {
     try {
       execSync(`taskkill /pid ${pid} /f /t`, { stdio: "ignore", windowsHide: true });
-    } catch (error) {
-      const err = error as NodeJS.ErrnoException;
-      if (err.code === "ESRCH") {
+    } catch {
+      if (!isProcessAlive(pid)) {
         return;
       }
       try {
@@ -1073,7 +1084,7 @@ export async function runOpenClawCommand(params: {
       if (settled) {
         return;
       }
-      child.kill("SIGKILL");
+      killChildProcessTree(child);
     }, params.timeoutMs);
 
     child.stdout?.on("data", (chunk: Buffer | string) => {

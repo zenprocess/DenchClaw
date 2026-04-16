@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, execSync, type ChildProcess } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -123,6 +123,18 @@ function firstNonEmptyLine(...values: Array<string | undefined>): string | undef
   return undefined;
 }
 
+function killChildProcessTree(child: ChildProcess): void {
+  if (process.platform === "win32" && child.pid != null) {
+    try {
+      execSync(`taskkill /pid ${child.pid} /f /t`, { stdio: "ignore", windowsHide: true });
+      return;
+    } catch {
+      // fall through to child.kill
+    }
+  }
+  child.kill("SIGKILL");
+}
+
 async function openUrl(url: string): Promise<boolean> {
   const argv =
     process.platform === "darwin"
@@ -138,7 +150,7 @@ async function openUrl(url: string): Promise<boolean> {
       ...(process.platform === "win32" ? { shell: true, windowsHide: true } : {}),
     });
     const timer = setTimeout(() => {
-      child.kill();
+      killChildProcessTree(child);
       resolve(false);
     }, 5_000);
     child.once("close", (code) => {
@@ -186,7 +198,7 @@ async function runOpenClawUpdateWithProgress(openclawCommand: string): Promise<v
 
     const timer = setTimeout(() => {
       if (!settled) {
-        child.kill("SIGKILL");
+        killChildProcessTree(child);
       }
     }, 8 * 60_000);
 

@@ -1,4 +1,4 @@
-import { spawn, type StdioOptions } from "node:child_process";
+import { spawn, execSync, type ChildProcess, type StdioOptions } from "node:child_process";
 import {
   cpSync,
   existsSync,
@@ -236,6 +236,18 @@ function platformSpawnOptions(): { shell: boolean; windowsHide: boolean } {
   return { shell: IS_WINDOWS, windowsHide: IS_WINDOWS };
 }
 
+function killChildProcessTree(child: ChildProcess): void {
+  if (IS_WINDOWS && child.pid != null) {
+    try {
+      execSync(`taskkill /pid ${child.pid} /f /t`, { stdio: "ignore", windowsHide: true });
+      return;
+    } catch {
+      // fall through to child.kill
+    }
+  }
+  child.kill("SIGKILL");
+}
+
 async function runCommandWithTimeout(
   argv: string[],
   options: {
@@ -266,7 +278,7 @@ async function runCommandWithTimeout(
       if (settled) {
         return;
       }
-      child.kill("SIGKILL");
+      killChildProcessTree(child);
     }, options.timeoutMs);
 
     child.stdout?.on("data", (chunk: Buffer | string) => {
@@ -1128,7 +1140,7 @@ async function runOpenClawWithProgress(params: {
 
     const timer = setTimeout(() => {
       if (!settled) {
-        child.kill("SIGKILL");
+        killChildProcessTree(child);
       }
     }, params.timeoutMs);
 

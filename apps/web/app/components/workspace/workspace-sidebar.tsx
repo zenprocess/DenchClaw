@@ -36,7 +36,7 @@ function indexItemToSuggestItem(item: SearchIndexItem): SuggestItem {
 	return {
 		name: item.kind === "object" ? item.label : fileName,
 		path: fullPath,
-		type: (item.kind === "object" ? "folder" : item.nodeType ?? "file") as SuggestItem["type"],
+		type: (item.nodeType ?? (item.kind === "object" ? "folder" : "file")) as SuggestItem["type"],
 	};
 }
 
@@ -192,9 +192,14 @@ function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => v
 	const [results, setResults] = useState<SuggestItem[]>([]);
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState("");
+	const justSelectedRef = useRef(false);
 	const anchorRef = useRef<HTMLDivElement>(null);
 
 	const handleInputValueChange = useCallback((inputValue: string) => {
+		if (justSelectedRef.current) {
+			justSelectedRef.current = false;
+			return;
+		}
 		setQuery(inputValue);
 		if (!inputValue.trim()) {
 			setResults([]);
@@ -217,6 +222,7 @@ function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => v
 			}}
 			onValueChange={(val) => {
 				if (val) {
+					justSelectedRef.current = true;
 					onSelect(val as SuggestItem);
 					setOpen(false);
 					setQuery("");
@@ -224,8 +230,8 @@ function FileSearch({ onSelect, searchFn }: { onSelect: (item: SuggestItem) => v
 				}
 			}}
 			onInputValueChange={handleInputValueChange}
-			filterOptions={null}
-			itemToStringLabel={(item) => (item as SuggestItem).name}
+			filter={null}
+			itemToStringLabel={() => ""}
 		>
 			<div ref={anchorRef} className="relative">
 				<span

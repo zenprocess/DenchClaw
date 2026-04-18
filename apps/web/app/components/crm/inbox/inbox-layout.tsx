@@ -34,6 +34,7 @@ export function InboxLayout({
   focusMode: boolean;
 }) {
   const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
+  const widthRef = useRef<number>(DEFAULT_WIDTH);
   const [isNarrow, setIsNarrow] = useState<boolean>(false);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -46,7 +47,9 @@ export function InboxLayout({
       if (raw) {
         const parsed = parseInt(raw, 10);
         if (Number.isFinite(parsed)) {
-          setWidth(clamp(parsed, MIN_WIDTH, MAX_WIDTH));
+          const clamped = clamp(parsed, MIN_WIDTH, MAX_WIDTH);
+          setWidth(clamped);
+          widthRef.current = clamped;
         }
       }
     } catch {
@@ -68,20 +71,21 @@ export function InboxLayout({
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    dragRef.current = { startX: e.clientX, startWidth: width };
-  }, [width]);
+    dragRef.current = { startX: e.clientX, startWidth: widthRef.current };
+  }, []);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!dragRef.current) {return;}
       const delta = e.clientX - dragRef.current.startX;
       const next = clamp(dragRef.current.startWidth + delta, MIN_WIDTH, MAX_WIDTH);
+      widthRef.current = next;
       setWidth(next);
     };
     const onUp = () => {
       if (dragRef.current) {
         try {
-          window.localStorage.setItem(STORAGE_KEY, String(width));
+          window.localStorage.setItem(STORAGE_KEY, String(widthRef.current));
         } catch {
           /* ignore */
         }
@@ -94,7 +98,7 @@ export function InboxLayout({
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
-  }, [width]);
+  }, []);
 
   // ─── Single-pane (narrow) ─────────────────────────────────────────────
   if (isNarrow) {

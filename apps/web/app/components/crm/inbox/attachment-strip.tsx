@@ -19,7 +19,7 @@ export function AttachmentStrip({ count }: { count?: number }) {
     >
       <PaperclipIcon />
       <span>
-        {count && count > 1 ? `${count} attachments` : "1 attachment"} · preview coming soon
+        {count != null && count > 1 ? `${count} attachments` : "1 attachment"} · preview coming soon
       </span>
     </div>
   );

@@ -91,11 +91,11 @@ export async function GET(req: Request) {
     wherePieces.push(`(${structuredWhere})`);
   }
   if (search) {
-    const safe = search.replace(/'/g, "''");
+    const safe = search.replace(/'/g, "''").replace(/%/g, "\\%").replace(/_/g, "\\_");
     wherePieces.push(
-      `(LOWER(COALESCE(name, '')) LIKE '%${safe}%'
-        OR LOWER(COALESCE(domain, '')) LIKE '%${safe}%'
-        OR LOWER(COALESCE(industry, '')) LIKE '%${safe}%')`,
+      `(LOWER(COALESCE(name, '')) LIKE '%${safe}%' ESCAPE '\\'
+        OR LOWER(COALESCE(domain, '')) LIKE '%${safe}%' ESCAPE '\\'
+        OR LOWER(COALESCE(industry, '')) LIKE '%${safe}%' ESCAPE '\\')`,
     );
   }
   const where = wherePieces.join(" AND ");

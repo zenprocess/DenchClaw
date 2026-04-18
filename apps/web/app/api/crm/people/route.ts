@@ -119,11 +119,11 @@ export async function GET(req: Request) {
 
   // Search filter — substring match against name / email / company.
   if (search) {
-    const safe = search.replace(/'/g, "''");
+    const safe = search.replace(/'/g, "''").replace(/%/g, "\\%").replace(/_/g, "\\_");
     wherePieces.push(
-      `(LOWER(COALESCE(name, '')) LIKE '%${safe}%'
-        OR LOWER(COALESCE(email, '')) LIKE '%${safe}%'
-        OR LOWER(COALESCE(company_name, '')) LIKE '%${safe}%')`,
+      `(LOWER(COALESCE(name, '')) LIKE '%${safe}%' ESCAPE '\\'
+        OR LOWER(COALESCE(email, '')) LIKE '%${safe}%' ESCAPE '\\'
+        OR LOWER(COALESCE(company_name, '')) LIKE '%${safe}%' ESCAPE '\\')`,
     );
   }
 

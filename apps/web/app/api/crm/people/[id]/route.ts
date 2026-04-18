@@ -3,7 +3,6 @@ import {
 } from "@/lib/workspace-schema-migrations";
 import {
   buildEntryProjection,
-  jsonArrayContains,
   loadCrmFieldMaps,
   safeQuery,
   sqlString,
@@ -153,10 +152,6 @@ export async function GET(
   const participantsFieldId = fieldMaps.email_thread["Participants"];
   let threads: ThreadSummary[] = [];
   if (participantsFieldId) {
-    const containsExpr = jsonArrayContains(
-      `MAX(CASE WHEN ef.field_id = '${participantsFieldId.replace(/'/g, "''")}' THEN ef.value END)`,
-      person.id,
-    );
     const threadProjection = buildEntryProjection({
       objectId: ONBOARDING_OBJECT_IDS.email_thread,
       fieldMap: fieldMaps.email_thread,
@@ -178,7 +173,6 @@ export async function GET(
       ORDER BY last_message_at DESC NULLS LAST
       LIMIT 50;
     `;
-    void containsExpr;
     const threadRows = await safeQuery<Record<string, string | null>>(threadSql);
     threads = threadRows.map((row) => ({
       id: String(row.entry_id),

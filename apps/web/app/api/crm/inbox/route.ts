@@ -64,8 +64,8 @@ export async function GET(req: Request) {
 
   let where = "1=1";
   if (search) {
-    const safe = search.replace(/'/g, "''");
-    where += ` AND LOWER(COALESCE(subject, '')) LIKE '%${safe}%'`;
+    const safe = search.replace(/'/g, "''").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    where += ` AND LOWER(COALESCE(subject, '')) LIKE '%${safe}%' ESCAPE '\\'`;
   }
   if (personId) {
     const safeId = personId.replace(/"/g, '""').replace(/'/g, "''");

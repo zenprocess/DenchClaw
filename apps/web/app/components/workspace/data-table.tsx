@@ -347,7 +347,7 @@ export function DataTable<TData, TValue>({
 	}, []);
 
 	// Build row number column — always first, non-sortable, non-hideable
-	const rownumColumn: ColumnDef<TData> = {
+	const rownumColumn: ColumnDef<TData> = useMemo(() => ({
 		id: "__rownum",
 		header: () => (
 			<span
@@ -357,16 +357,15 @@ export function DataTable<TData, TValue>({
 				#
 			</span>
 		),
-		cell: ({ row }) => {
-			const baseIdx = serverPagination
-				? (serverPagination.page - 1) * serverPagination.pageSize
-				: 0;
+		cell: ({ row, table: tbl }) => {
+			const { pageIndex, pageSize } = tbl.getState().pagination;
+			const visualIndex = tbl.getRowModel().rows.indexOf(row);
 			return (
 				<span
 					className="text-[11px] tabular-nums"
 					style={{ color: "var(--color-text-muted)", opacity: 0.55 }}
 				>
-					{baseIdx + row.index + 1}
+					{pageIndex * pageSize + visualIndex + 1}
 				</span>
 			);
 		},
@@ -375,7 +374,7 @@ export function DataTable<TData, TValue>({
 		enableSorting: false,
 		enableHiding: false,
 		enableResizing: false,
-	};
+	}), []);
 
 	// Build selection column
 	const selectionColumn: ColumnDef<TData> | null = enableRowSelection

@@ -1350,7 +1350,7 @@ export function ensureDefaultManagedPluginsInstalled(): IntegrationsRepairResult
   const repairs = REQUIRED_MANAGED_PLUGIN_IDS.map((id) =>
     ensureManagedBundledPlugin(config, {
       spec: resolveManagedBundledPluginSpec(id),
-      enabled: true,
+      preserveExistingDisabled: true,
     })
   );
   const changed = repairs.some((repair) => repair.changed);

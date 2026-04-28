@@ -24,7 +24,8 @@
  *     codeVerifier?,         // PKCE
  *     oauthState?,           // CSRF nonce
  *     redirectUri?,          // pinned at /connect/start time
- *     scope?,                // requested scope
+ *
+ *     scope?,                // retained for refresh-token grants
  *   }
  */
 
@@ -184,6 +185,7 @@ export function clearTransientOAuthFields(key: string): void {
     ...current,
     codeVerifier: null,
     oauthState: null,
+    redirectUri: null,
   };
   writeAll(all);
 }

@@ -15,6 +15,7 @@ import {
 export type AddMcpServerInput = {
   key: string;
   url: string;
+  authToken: string | null;
 };
 
 type AddMcpServerDialogProps = {
@@ -31,6 +32,7 @@ export function AddMcpServerDialog({
   const keyInputRef = useRef<HTMLInputElement>(null);
   const [key, setKey] = useState("");
   const [url, setUrl] = useState("");
+  const [authToken, setAuthToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,6 +42,7 @@ export function AddMcpServerDialog({
     }
     setKey("");
     setUrl("");
+    setAuthToken("");
     setError(null);
     setSubmitting(false);
     setTimeout(() => keyInputRef.current?.focus(), 100);
@@ -62,6 +65,7 @@ export function AddMcpServerDialog({
       const submitError = await onSubmit({
         key: key.trim(),
         url: url.trim(),
+        authToken: authToken.trim() || null,
       });
 
       if (submitError) {
@@ -81,8 +85,8 @@ export function AddMcpServerDialog({
         <DialogHeader>
           <DialogTitle>Add MCP Server</DialogTitle>
           <DialogDescription>
-            Connect a remote MCP server over streamable HTTP. After adding it, click
-            Connect on the row to authenticate.
+            Connect a remote MCP server over streamable HTTP. Auth is optional and uses a
+            Bearer token header.
           </DialogDescription>
         </DialogHeader>
 
@@ -147,6 +151,38 @@ export function AddMcpServerDialog({
                 color: "var(--color-text)",
               }}
             />
+          </div>
+
+          <div>
+            <label
+              className="mb-1.5 block text-sm font-medium"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              Auth token
+            </label>
+            <input
+              type="password"
+              value={authToken}
+              onChange={(event) => {
+                setAuthToken(event.target.value);
+                setError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !submitting) {
+                  void handleSubmit();
+                }
+              }}
+              placeholder="Optional Bearer token"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              style={{
+                background: "var(--color-bg)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-text)",
+              }}
+            />
+            <p className="mt-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
+              If provided, this is stored as an <code>Authorization: Bearer ...</code> header.
+            </p>
           </div>
 
           <div

@@ -15,6 +15,7 @@ import {
 } from "@/lib/mcp-oauth";
 import { getMcpServerSecret, setMcpServerSecret } from "@/lib/mcp-secrets";
 import { resolveAppPublicOrigin } from "@/lib/public-origin";
+import { trackServer } from "@/lib/telemetry";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -92,6 +93,11 @@ export async function POST(request: Request): Promise<Response> {
     return jsonError(`MCP server '${key}' was not found.`, 404);
   }
 
+  trackServer("mcp_connect_started", {
+    key,
+    method: "oauth",
+  });
+
   const serverConfig = getMcpServerConfig(key);
   if (!serverConfig) {
     return jsonError(`MCP server '${key}' is missing wire config.`, 500);
@@ -124,6 +130,10 @@ export async function POST(request: Request): Promise<Response> {
       detail: probe.detail,
       checkedAt: probe.checkedAt,
     });
+    trackServer("mcp_connect_failed", {
+      key,
+      reason: "probe_error",
+    });
     return notSupported(`The server is not reachable: ${probe.detail}`);
   }
 
@@ -134,6 +144,10 @@ export async function POST(request: Request): Promise<Response> {
       state: "needs_auth",
       detail: probe.detail,
       checkedAt: probe.checkedAt,
+    });
+    trackServer("mcp_connect_failed", {
+      key,
+      reason: "no_oauth_metadata",
     });
     return notSupported(
       "The server did not advertise an OAuth resource metadata URL. Use a manual access token instead.",
@@ -153,6 +167,10 @@ export async function POST(request: Request): Promise<Response> {
       state: "needs_auth",
       detail,
       checkedAt: new Date().toISOString(),
+    });
+    trackServer("mcp_connect_failed", {
+      key,
+      reason,
     });
     return notSupported(`OAuth discovery failed (${reason}): ${detail}`);
   }
@@ -177,6 +195,10 @@ export async function POST(request: Request): Promise<Response> {
         ? err.reason
         : "registration_failed";
       const detail = err instanceof Error ? err.message : "Registration failed.";
+      trackServer("mcp_connect_failed", {
+        key,
+        reason,
+      });
       return notSupported(`Dynamic client registration failed (${reason}): ${detail}`);
     }
   }

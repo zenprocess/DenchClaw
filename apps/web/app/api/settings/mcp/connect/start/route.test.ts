@@ -47,6 +47,10 @@ vi.mock("@/lib/public-origin", () => ({
   resolveAppPublicOrigin: vi.fn(() => "http://localhost:3100"),
 }));
 
+vi.mock("@/lib/telemetry", () => ({
+  trackServer: vi.fn(),
+}));
+
 const {
   getMcpServer,
   getMcpServerConfig,
@@ -197,5 +201,54 @@ describe("POST /api/settings/mcp/connect/start", () => {
       oauthState: "state-123",
       scope: "mcp:read",
     }));
+  });
+
+  it("falls back when the authorization server does not support dynamic registration", async () => {
+    mockedProbeMcpServer.mockResolvedValue({
+      status: "needs_auth",
+      toolCount: null,
+      authChallenge: {
+        scheme: "Bearer",
+        realm: null,
+        resourceMetadataUrl: "https://mcp.example.com/.well-known/oauth-protected-resource",
+        scope: null,
+        errorCode: null,
+        errorDescription: null,
+      },
+      detail: "HTTP 401 from MCP server.",
+      checkedAt: "2026-04-29T00:00:00.000Z",
+      httpStatus: 401,
+    });
+    mockedDiscoverOAuthMetadata.mockResolvedValue({
+      resource: {
+        resource: "https://mcp.example.com",
+        authorizationServers: ["https://auth.example.com"],
+        scopesSupported: [],
+        bearerMethodsSupported: [],
+      },
+      authServer: {
+        issuer: "https://auth.example.com",
+        authorizationEndpoint: "https://auth.example.com/authorize",
+        tokenEndpoint: "https://auth.example.com/token",
+        registrationEndpoint: null,
+        scopesSupported: [],
+        responseTypesSupported: ["code"],
+        grantTypesSupported: ["authorization_code"],
+        codeChallengeMethodsSupported: ["S256"],
+        tokenEndpointAuthMethodsSupported: ["none"],
+      },
+    });
+    mockedRegisterOAuthClient.mockRejectedValue(new Error("no registration_endpoint"));
+
+    const response = await POST(new Request("http://localhost/api/settings/mcp/connect/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "acme" }),
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.supportsOAuth).toBe(false);
+    expect(body.reason).toMatch(/Dynamic client registration failed/);
   });
 });

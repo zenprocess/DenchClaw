@@ -40,6 +40,10 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const tokenHeader = formatBearerHeader(body.authToken);
+  trackServer("mcp_connect_started", {
+    key: body.key,
+    method: "token",
+  });
 
   try {
     setAuthorizationHeader(body.key, tokenHeader);
@@ -88,6 +92,14 @@ export async function POST(req: Request): Promise<Response> {
     key: body.key,
     probe_status: result.status,
   });
+  trackServer(
+    result.status === "connected" ? "mcp_connect_completed" : "mcp_connect_failed",
+    {
+      key: body.key,
+      method: "token",
+      ...(result.status === "connected" ? {} : { reason: result.status }),
+    },
+  );
 
   return Response.json({
     server: entry,

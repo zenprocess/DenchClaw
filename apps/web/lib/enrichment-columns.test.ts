@@ -5,7 +5,7 @@ import {
 	extractEnrichmentValue,
 	getAvailableEnrichmentCategories,
 	getEligibleInputFields,
-	getRequiredFieldsForApolloPath,
+	getEnrichmentColumns,
 } from "./enrichment-columns";
 
 describe("getEligibleInputFields", () => {
@@ -76,16 +76,20 @@ describe("requiredFields mapping", () => {
 	});
 
 	it("resolves canonical requiredFields from an apolloPath", () => {
-		expect(getRequiredFieldsForApolloPath("people", "person.contact.phone_numbers.0.sanitized_number"))
+		const findRequired = (category: "people" | "company", apolloPath: string) =>
+			getEnrichmentColumns(category).find((c) => c.apolloPath === apolloPath)?.requiredFields ?? [];
+
+		expect(findRequired("people", "person.contact.phone_numbers.0.sanitized_number"))
 			.toEqual(["phone"]);
-		expect(getRequiredFieldsForApolloPath("people", "person.headline")).toEqual(["headline"]);
-		expect(getRequiredFieldsForApolloPath("people", "person.title")).toEqual([]);
-		expect(getRequiredFieldsForApolloPath("company", "organization.industry")).toEqual(["industryList"]);
-		expect(getRequiredFieldsForApolloPath("company", "organization.website_url")).toEqual(["website"]);
+		expect(findRequired("people", "person.headline")).toEqual(["headline"]);
+		expect(findRequired("people", "person.title")).toEqual([]);
+		expect(findRequired("company", "organization.industry")).toEqual(["industryList"]);
+		expect(findRequired("company", "organization.website_url")).toEqual(["website"]);
 	});
 
 	it("returns an empty list for unknown apolloPaths so the gateway uses default backfill", () => {
-		expect(getRequiredFieldsForApolloPath("people", "person.unknown")).toEqual([]);
+		const column = getEnrichmentColumns("people").find((c) => c.apolloPath === "person.unknown");
+		expect(column?.requiredFields ?? []).toEqual([]);
 	});
 });
 

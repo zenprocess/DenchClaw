@@ -326,7 +326,7 @@ export function extractEnrichmentValue(
  * `apolloPath` matches. Falls back to an empty array (gateway will then use
  * its default backfill list) when no column matches.
  */
-export function getRequiredFieldsForApolloPath(
+function getRequiredFieldsForApolloPath(
 	category: EnrichmentCategory,
 	apolloPath: string,
 ): string[] {

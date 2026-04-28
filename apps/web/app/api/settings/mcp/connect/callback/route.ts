@@ -244,7 +244,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const cached = getMcpServerSecret(serverKey);
-  if (!cached || !cached.codeVerifier || !cached.redirectUri) {
+  if (!cached || !cached.codeVerifier || !cached.redirectUri || !cached.asMetadataUrl) {
     return renderResultPage(
       {
         kind: "error",

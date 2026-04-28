@@ -261,10 +261,15 @@ async function fetchAuthorizationServerMetadata(
 }
 
 function buildMetadataUrls(issuer: string): string[] {
-  const trimmed = issuer.endsWith("/") ? issuer.slice(0, -1) : issuer;
+  // RFC 8414 §3: insert /.well-known/oauth-authorization-server between the
+  // origin and the path, e.g. https://example.com/tenant becomes
+  // https://example.com/.well-known/oauth-authorization-server/tenant
+  const url = new URL(issuer);
+  const path = url.pathname.replace(/\/+$/, "");
   return [
-    `${trimmed}/.well-known/oauth-authorization-server`,
-    `${trimmed}/.well-known/openid-configuration`,
+    `${url.origin}/.well-known/oauth-authorization-server${path}`,
+    // OIDC Discovery appends to the issuer per OpenID Connect Discovery §4.
+    `${url.origin}${path}/.well-known/openid-configuration`,
   ];
 }
 

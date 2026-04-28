@@ -184,6 +184,7 @@ export function clearTransientOAuthFields(key: string): void {
     ...current,
     codeVerifier: null,
     oauthState: null,
+    redirectUri: null,
   };
   writeAll(all);
 }

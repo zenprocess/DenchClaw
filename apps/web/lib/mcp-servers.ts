@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { deleteMcpServerSecret } from "@/lib/mcp-secrets";
 import { resolveOpenClawStateDir } from "@/lib/workspace";
 
 type UnknownRecord = Record<string, unknown>;
@@ -470,4 +471,6 @@ export function removeMcpServer(key: string): void {
     delete states[normalizedKey];
     writeStatesSidecar(states);
   }
+
+  deleteMcpServerSecret(normalizedKey);
 }

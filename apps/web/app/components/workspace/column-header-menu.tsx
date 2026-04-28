@@ -453,16 +453,17 @@ export function AddColumnPopover({
 					setError(data.error ?? "Failed to mark existing field as enrichment");
 					return;
 				}
-				handleClose();
-				onEnrichmentStartRef.current?.({
-					fieldId: existingOutputField.id,
-					fieldName: existingOutputField.name,
-					apolloPath: selectedEnrichCol.apolloPath,
-					category: enrichCategory,
-					inputFieldName: enrichInputField,
-					scope: enrichScope,
-				});
-				return;
+			handleClose();
+			onCreated();
+			onEnrichmentStartRef.current?.({
+				fieldId: existingOutputField.id,
+				fieldName: existingOutputField.name,
+				apolloPath: selectedEnrichCol.apolloPath,
+				category: enrichCategory,
+				inputFieldName: enrichInputField,
+				scope: enrichScope,
+			});
+			return;
 			}
 
 			const body: Record<string, unknown> = {

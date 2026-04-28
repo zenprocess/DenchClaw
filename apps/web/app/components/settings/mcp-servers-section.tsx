@@ -268,6 +268,13 @@ export function McpServersSection() {
   }, []);
 
   useEffect(() => {
+    const currentKeys = new Set(servers.map((server) => server.key));
+    for (const hydratedKey of hydratedProbeKeysRef.current) {
+      if (!currentKeys.has(hydratedKey)) {
+        hydratedProbeKeysRef.current.delete(hydratedKey);
+      }
+    }
+
     if (loading || servers.length === 0) {
       return;
     }

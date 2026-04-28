@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -153,6 +153,7 @@ export function McpServersSection() {
   const [connectTarget, setConnectTarget] = useState<ConnectTarget | null>(null);
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const hydratedProbeKeysRef = useRef<Set<string>>(new Set());
 
   const fetchServers = useCallback(async () => {
     setLoading(true);
@@ -238,7 +239,10 @@ export function McpServersSection() {
     });
   }, []);
 
-  const refreshServer = useCallback(async (serverKey: string) => {
+  const refreshServer = useCallback(async (
+    serverKey: string,
+    options?: { showSuccessNotice?: boolean },
+  ) => {
     try {
       const response = await fetch("/api/settings/mcp/probe", {
         method: "POST",
@@ -251,7 +255,7 @@ export function McpServersSection() {
       const payload = await response.json() as { server?: McpServerEntry };
       if (payload.server) {
         setServers((current) => upsertServer(current, payload.server as McpServerEntry));
-        if (payload.server.state === "connected") {
+        if (options?.showSuccessNotice !== false && payload.server.state === "connected") {
           setNotice({
             tone: "success",
             message: `Connected '${serverKey}'.`,
@@ -262,6 +266,20 @@ export function McpServersSection() {
       // ignore — the row state will surface the error on the next probe
     }
   }, []);
+
+  useEffect(() => {
+    if (loading || servers.length === 0) {
+      return;
+    }
+
+    for (const server of servers) {
+      if (hydratedProbeKeysRef.current.has(server.key)) {
+        continue;
+      }
+      hydratedProbeKeysRef.current.add(server.key);
+      void refreshServer(server.key, { showSuccessNotice: false });
+    }
+  }, [loading, refreshServer, servers]);
 
   const handleConnectClick = useCallback(
     async (server: McpServerEntry): Promise<void> => {

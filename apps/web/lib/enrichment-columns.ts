@@ -104,8 +104,8 @@ export const PEOPLE_ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
 		key: "person.title",
 		fieldType: "text",
 		apolloPath: "person.title",
-		requiredFields: ["headline"],
-		extractionFallbacks: ["headline", "person.headline"],
+		requiredFields: ["title"],
+		extractionFallbacks: ["title", "person.title"],
 	},
 	{
 		label: "Location",
@@ -275,7 +275,7 @@ export function inferInputKind(
 // Extract a value from the Apollo response using a dot-path
 // ---------------------------------------------------------------------------
 
-export function extractApolloValue(
+function extractApolloValue(
 	payload: Record<string, unknown>,
 	apolloPath: string,
 ): string | null {

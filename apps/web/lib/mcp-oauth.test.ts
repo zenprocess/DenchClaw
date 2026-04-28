@@ -95,7 +95,10 @@ describe("MCP OAuth utilities", () => {
 
   it("registers a dynamic client with redirect URI and scope", async () => {
     const fetcher = makeFetcher((_url, init) => {
-      const body = JSON.parse(String(init.body)) as {
+      if (typeof init.body !== "string") {
+        throw new Error("Expected JSON string body.");
+      }
+      const body = JSON.parse(init.body) as {
         redirect_uris: string[];
         scope: string;
       };

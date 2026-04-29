@@ -19,6 +19,7 @@
  *     tokenExpiresAt,
  *     asMetadataUrl,         // resolved RFC 8414 metadata document URL
  *     authServerIssuer?,     // best-effort identifier for diagnostics
+ *     registeredRedirectUri?, // redirect URI used for DCR client registration
  *
  *     // Transient (cleared after `exchangeCodeForToken`):
  *     codeVerifier?,         // PKCE
@@ -51,6 +52,8 @@ export type McpServerSecret = {
   tokenExpiresAt: string | null;
   asMetadataUrl: string;
   authServerIssuer: string | null;
+  /** Redirect URI registered with the OAuth client. */
+  registeredRedirectUri: string | null;
   /** PKCE verifier — only present between /connect/start and /connect/callback. */
   codeVerifier: string | null;
   /** CSRF nonce — only present between /connect/start and /connect/callback. */
@@ -90,6 +93,7 @@ function emptySecret(): McpServerSecret {
     tokenExpiresAt: null,
     asMetadataUrl: "",
     authServerIssuer: null,
+    registeredRedirectUri: null,
     codeVerifier: null,
     oauthState: null,
     redirectUri: null,
@@ -121,6 +125,7 @@ function readAll(): Record<string, McpServerSecret> {
         tokenExpiresAt: readString(entry.tokenExpiresAt) ?? null,
         asMetadataUrl: readString(entry.asMetadataUrl) ?? "",
         authServerIssuer: readString(entry.authServerIssuer) ?? null,
+        registeredRedirectUri: readString(entry.registeredRedirectUri) ?? null,
         codeVerifier: readString(entry.codeVerifier) ?? null,
         oauthState: readString(entry.oauthState) ?? null,
         redirectUri: readString(entry.redirectUri) ?? null,

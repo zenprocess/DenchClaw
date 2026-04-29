@@ -204,8 +204,10 @@ async function fetchAuthorizationServerMetadata(
   issuer: string,
   fetcher: typeof fetch,
 ): Promise<AuthorizationServerMetadata> {
-  // Per RFC 8414 the well-known path is appended to the issuer:
-  //   https://example.com → https://example.com/.well-known/oauth-authorization-server
+  // Per RFC 8414, issuers with paths place the well-known segment before
+  // the issuer path:
+  //   https://example.com       → https://example.com/.well-known/oauth-authorization-server
+  //   https://example.com/tenant → https://example.com/.well-known/oauth-authorization-server/tenant
   // Try OAuth metadata first, then OpenID Connect's well-known path as a
   // common fallback (some providers only expose OIDC).
   const candidates = buildMetadataUrls(issuer);
@@ -262,10 +264,38 @@ async function fetchAuthorizationServerMetadata(
 
 function buildMetadataUrls(issuer: string): string[] {
   const trimmed = issuer.endsWith("/") ? issuer.slice(0, -1) : issuer;
+  const pathAwareOAuth = buildPathAwareWellKnownUrl(
+    trimmed,
+    "oauth-authorization-server",
+  );
+  const pathAwareOidc = buildPathAwareWellKnownUrl(
+    trimmed,
+    "openid-configuration",
+  );
   return [
+    pathAwareOAuth,
     `${trimmed}/.well-known/oauth-authorization-server`,
+    pathAwareOidc,
     `${trimmed}/.well-known/openid-configuration`,
-  ];
+  ].filter((url, index, urls): url is string => Boolean(url) && urls.indexOf(url) === index);
+}
+
+function buildPathAwareWellKnownUrl(
+  issuer: string,
+  wellKnownSuffix: string,
+): string | null {
+  try {
+    const parsed = new URL(issuer);
+    const issuerPath = parsed.pathname === "/"
+      ? ""
+      : parsed.pathname.replace(/\/$/u, "");
+    parsed.pathname = `/.well-known/${wellKnownSuffix}${issuerPath}`;
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 /**

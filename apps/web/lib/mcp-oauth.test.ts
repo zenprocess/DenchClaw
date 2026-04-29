@@ -93,6 +93,42 @@ describe("MCP OAuth utilities", () => {
     expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
+  it("uses RFC 8414 path-aware metadata URLs for issuers with paths", async () => {
+    const fetcher = makeFetcher((url) => {
+      if (url === "https://mcp.stripe.com/.well-known/oauth-protected-resource") {
+        return new Response(JSON.stringify({
+          resource: "https://mcp.stripe.com",
+          authorization_servers: ["https://access.stripe.com/mcp"],
+        }));
+      }
+      if (url === "https://access.stripe.com/.well-known/oauth-authorization-server/mcp") {
+        return new Response(JSON.stringify({
+          issuer: "https://access.stripe.com/mcp",
+          authorization_endpoint: "https://access.stripe.com/mcp/oauth2/authorize",
+          token_endpoint: "https://access.stripe.com/mcp/oauth2/token",
+          registration_endpoint: "https://access.stripe.com/mcp/oauth2/register",
+          scopes_supported: ["mcp"],
+          response_types_supported: ["code"],
+          grant_types_supported: ["authorization_code", "refresh_token"],
+          code_challenge_methods_supported: ["S256"],
+          token_endpoint_auth_methods_supported: ["none"],
+        }));
+      }
+      return new Response("not found", { status: 404 });
+    });
+
+    const result = await discoverOAuthMetadata(
+      "https://mcp.stripe.com/.well-known/oauth-protected-resource",
+      { fetcher },
+    );
+
+    expect(result.authServer.issuer).toBe("https://access.stripe.com/mcp");
+    expect(result.authServer.authorizationEndpoint).toBe(
+      "https://access.stripe.com/mcp/oauth2/authorize",
+    );
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("registers a dynamic client with redirect URI and scope", async () => {
     const fetcher = makeFetcher((_url, init) => {
       if (typeof init.body !== "string") {

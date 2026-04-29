@@ -199,7 +199,86 @@ describe("POST /api/settings/mcp/connect/start", () => {
       clientId: "client-123",
       codeVerifier: "verifier-123",
       oauthState: "state-123",
+      registeredRedirectUri: "http://localhost:3100/api/settings/mcp/connect/callback",
       scope: "mcp:read",
+    }));
+  });
+
+  it("registers a fresh client when the cached redirect URI differs", async () => {
+    mockedProbeMcpServer.mockResolvedValue({
+      status: "needs_auth",
+      toolCount: null,
+      authChallenge: {
+        scheme: "Bearer",
+        realm: null,
+        resourceMetadataUrl: "https://mcp.example.com/.well-known/oauth-protected-resource",
+        scope: null,
+        errorCode: null,
+        errorDescription: null,
+      },
+      detail: "HTTP 401 from MCP server.",
+      checkedAt: "2026-04-29T00:00:00.000Z",
+      httpStatus: 401,
+    });
+    mockedDiscoverOAuthMetadata.mockResolvedValue({
+      resource: {
+        resource: "https://mcp.example.com",
+        authorizationServers: ["https://auth.example.com"],
+        scopesSupported: ["mcp:read"],
+        bearerMethodsSupported: ["header"],
+      },
+      authServer: {
+        issuer: "https://auth.example.com",
+        authorizationEndpoint: "https://auth.example.com/authorize",
+        tokenEndpoint: "https://auth.example.com/token",
+        registrationEndpoint: "https://auth.example.com/register",
+        scopesSupported: ["mcp:read"],
+        responseTypesSupported: ["code"],
+        grantTypesSupported: ["authorization_code"],
+        codeChallengeMethodsSupported: ["S256"],
+        tokenEndpointAuthMethodsSupported: ["none"],
+      },
+    });
+    mockedGetMcpServerSecret.mockReturnValue({
+      clientId: "old-client",
+      clientSecret: null,
+      refreshToken: null,
+      tokenExpiresAt: null,
+      asMetadataUrl: "https://mcp.example.com/.well-known/oauth-protected-resource",
+      authServerIssuer: "https://auth.example.com",
+      registeredRedirectUri: "http://old.example/api/settings/mcp/connect/callback",
+      codeVerifier: null,
+      oauthState: null,
+      redirectUri: null,
+      scope: "mcp:read",
+    });
+    mockedRegisterOAuthClient.mockResolvedValue({
+      clientId: "new-client",
+      clientSecret: null,
+      registrationAccessToken: null,
+      registrationClientUri: null,
+    });
+    mockedBuildAuthorizationUrl.mockReturnValue({
+      authorizationUrl: "https://auth.example.com/authorize?client_id=new-client",
+      state: "state-123",
+      codeVerifier: "verifier-123",
+      redirectUri: "http://localhost:3100/api/settings/mcp/connect/callback",
+      scope: "mcp:read",
+    });
+
+    const response = await POST(new Request("http://localhost/api/settings/mcp/connect/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "acme" }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mockedRegisterOAuthClient).toHaveBeenCalledWith(expect.objectContaining({
+      redirectUri: "http://localhost:3100/api/settings/mcp/connect/callback",
+    }));
+    expect(mockedSetMcpServerSecret).toHaveBeenCalledWith("acme", expect.objectContaining({
+      clientId: "new-client",
+      registeredRedirectUri: "http://localhost:3100/api/settings/mcp/connect/callback",
     }));
   });
 

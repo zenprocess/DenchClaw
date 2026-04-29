@@ -38,14 +38,16 @@ function buildRedirectUri(request: Request): string {
 }
 
 /**
- * Reuse a previously cached client_id for this server if its asMetadataUrl
- * still matches the discovery result. If the AS issuer has changed since
- * the last DCR, throw the cache away — we'll register a fresh client.
+ * Reuse a previously cached client_id only when it still matches the same
+ * authorization server and redirect URI. DCR clients are registered with a
+ * fixed callback URL, so reusing one across localhost/tunnel/origin changes
+ * can produce "redirect URL is invalid" during authorization.
  */
 function maybeRehydrateClient(
   key: string,
   asMetadata: AuthorizationServerMetadata,
   asMetadataUrl: string,
+  redirectUri: string,
 ): RegisteredClient | null {
   const cached = getMcpServerSecret(key);
   if (!cached || !cached.clientId) {
@@ -55,6 +57,9 @@ function maybeRehydrateClient(
     return null;
   }
   if (cached.authServerIssuer && cached.authServerIssuer !== asMetadata.issuer) {
+    return null;
+  }
+  if (cached.registeredRedirectUri !== redirectUri) {
     return null;
   }
   return {
@@ -181,7 +186,12 @@ export async function POST(request: Request): Promise<Response> {
     : (challenge?.scope ?? null);
 
   // Step 3: register (or reuse) an OAuth client.
-  let client = maybeRehydrateClient(key, discovered.authServer, resourceMetadataUrl);
+  let client = maybeRehydrateClient(
+    key,
+    discovered.authServer,
+    resourceMetadataUrl,
+    redirectUri,
+  );
   if (!client) {
     try {
       client = await registerOAuthClient({
@@ -218,6 +228,7 @@ export async function POST(request: Request): Promise<Response> {
     clientSecret: client.clientSecret,
     asMetadataUrl: resourceMetadataUrl,
     authServerIssuer: discovered.authServer.issuer,
+    registeredRedirectUri: redirectUri,
     codeVerifier: authParams.codeVerifier,
     oauthState: authParams.state,
     redirectUri: authParams.redirectUri,

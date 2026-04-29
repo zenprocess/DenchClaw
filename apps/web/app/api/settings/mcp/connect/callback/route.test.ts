@@ -119,6 +119,7 @@ describe("GET /api/settings/mcp/connect/callback", () => {
       tokenExpiresAt: null,
       asMetadataUrl: "https://mcp.example.com/.well-known/oauth-protected-resource",
       authServerIssuer: "https://auth.example.com",
+      registeredRedirectUri: "http://localhost:3100/api/settings/mcp/connect/callback",
       codeVerifier: "verifier-123",
       oauthState: "state-123",
       redirectUri: "http://localhost:3100/api/settings/mcp/connect/callback",

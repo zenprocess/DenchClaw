@@ -98,9 +98,10 @@ export function parseWwwAuthenticate(header: string | null): McpAuthChallenge | 
   const params = new Map<string, string>();
   let buffer = "";
   let inQuotes = false;
+  let prevChar = "";
   const segments: string[] = [];
   for (const ch of paramsRaw) {
-    if (ch === "\"") {
+    if (ch === "\"" && prevChar !== "\\") {
       inQuotes = !inQuotes;
       buffer += ch;
     } else if (ch === "," && !inQuotes) {
@@ -109,6 +110,7 @@ export function parseWwwAuthenticate(header: string | null): McpAuthChallenge | 
     } else {
       buffer += ch;
     }
+    prevChar = ch;
   }
   if (buffer.trim()) {
     segments.push(buffer);
@@ -225,8 +227,7 @@ export async function probeMcpServer(options: McpProbeOptions): Promise<McpProbe
     });
 
     if (response.status === 401 || response.status === 403) {
-      const wwwAuthenticate = response.headers.get("www-authenticate")
-        ?? response.headers.get("WWW-Authenticate");
+      const wwwAuthenticate = response.headers.get("www-authenticate");
       const challenge = parseWwwAuthenticate(wwwAuthenticate);
       const detail = challenge?.errorDescription
         ?? challenge?.errorCode

@@ -8,12 +8,7 @@ import {
   extractComposioConnections,
   normalizeComposioConnections,
 } from "@/lib/composio-client";
-import {
-  readOnboardingState,
-  writeConnection,
-  writeOnboardingState,
-  type ConnectionRecord,
-} from "@/lib/denchclaw-state";
+import { persistLocalSyncConnection } from "@/lib/composio-local-sync";
 import { refreshIntegrationsRuntime } from "@/lib/integrations";
 import { resolveAppPublicOrigin } from "@/lib/public-origin";
 import type { NormalizedComposioConnection } from "@/lib/composio";
@@ -23,49 +18,6 @@ export const runtime = "nodejs";
 
 function serializeForInlineScript(value: unknown): string {
   return JSON.stringify(value).replace(/</g, "\\u003c");
-}
-
-function syncToolkitFromConnection(
-  connection: NormalizedComposioConnection,
-): "gmail" | "calendar" | null {
-  if (connection.normalized_toolkit_slug === "gmail") {
-    return "gmail";
-  }
-  if (
-    connection.normalized_toolkit_slug === "google-calendar" ||
-    connection.normalized_toolkit_slug === "googlecalendar"
-  ) {
-    return "calendar";
-  }
-  return null;
-}
-
-function persistLocalSyncConnection(connection: NormalizedComposioConnection): void {
-  if (!connection.is_active) {
-    return;
-  }
-  const toolkit = syncToolkitFromConnection(connection);
-  if (!toolkit) {
-    return;
-  }
-
-  const record: ConnectionRecord = {
-    connectionId: connection.id,
-    toolkitSlug: connection.normalized_toolkit_slug,
-    accountEmail: connection.account_email ?? connection.account?.email ?? undefined,
-    accountLabel: connection.display_label,
-    connectedAt: new Date().toISOString(),
-  };
-  writeConnection(toolkit, record);
-
-  const current = readOnboardingState();
-  writeOnboardingState({
-    ...current,
-    connections: {
-      ...current.connections,
-      [toolkit]: record,
-    },
-  });
 }
 
 async function resolveConnectedConnection(

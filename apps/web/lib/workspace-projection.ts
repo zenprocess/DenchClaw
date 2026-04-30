@@ -31,6 +31,13 @@ const PROJECTION_SCAN_SKIP_DIRS = new Set([
   "node_modules",
 ]);
 
+/** Objects already known to have a `.object.yaml` in a nested (non-root) slot. */
+const nestedObjectYamlCache = new Set<string>();
+
+function nestedCacheKey(workspaceRoot: string, objectName: string): string {
+  return `${workspaceRoot}\0${objectName}`;
+}
+
 function objectYamlMatchesName(yamlPath: string, objectName: string): boolean {
   try {
     const raw = readFileSync(yamlPath, "utf-8");
@@ -112,11 +119,15 @@ export function projectObjectToFilesystem(
   }
 
   const yamlPath = join(objectDir, ".object.yaml");
-  if (
-    !existsSync(yamlPath) &&
-    hasExistingObjectYamlOutsideRootSlot(resolvedRoot, name, objectDir)
-  ) {
-    return { name, status: "skipped", reason: "object_exists_nested" };
+  if (!existsSync(yamlPath)) {
+    const cacheKey = nestedCacheKey(resolvedRoot, name);
+    if (
+      nestedObjectYamlCache.has(cacheKey) ||
+      hasExistingObjectYamlOutsideRootSlot(resolvedRoot, name, objectDir)
+    ) {
+      nestedObjectYamlCache.add(cacheKey);
+      return { name, status: "skipped", reason: "object_exists_nested" };
+    }
   }
 
   let createdDir = false;

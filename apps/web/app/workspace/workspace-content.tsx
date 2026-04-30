@@ -3105,6 +3105,12 @@ function ObjectView({
   // does not leak A's filter into the B query string.
   const initialState = useMemo(() => {
     const url = parseUrlState(searchParams);
+    // Guard: if the URL path doesn't match this table, the URL still has
+    // stale params from the previous table (the shell effect that cleans
+    // them hasn't fired yet). Ignore them to prevent cross-table bleed.
+    if (url.path && url.path !== data.object.name) {
+      return {};
+    }
     return {
       view: url.view ?? undefined,
       viewType: url.viewType ?? undefined,

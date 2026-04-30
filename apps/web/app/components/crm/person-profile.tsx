@@ -121,6 +121,10 @@ export function PersonProfile({
   const [localTab, setLocalTab] = useState<PersonProfileTab>("overview");
   const tab = isPersonProfileTab(activeTab) ? activeTab : localTab;
 
+  useEffect(() => {
+    setLocalTab(isPersonProfileTab(activeTab) ? activeTab : "overview");
+  }, [activeTab]);
+
   const handleTabChange = useCallback(
     (nextTab: PersonProfileTab) => {
       setLocalTab(nextTab);

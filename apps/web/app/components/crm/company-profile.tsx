@@ -110,6 +110,10 @@ export function CompanyProfile({
   const [localTab, setLocalTab] = useState<CompanyProfileTab>("overview");
   const tab = isCompanyProfileTab(activeTab) ? activeTab : localTab;
 
+  useEffect(() => {
+    setLocalTab(isCompanyProfileTab(activeTab) ? activeTab : "overview");
+  }, [activeTab]);
+
   const handleTabChange = useCallback(
     (nextTab: CompanyProfileTab) => {
       setLocalTab(nextTab);

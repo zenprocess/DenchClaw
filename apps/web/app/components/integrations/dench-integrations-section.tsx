@@ -231,13 +231,13 @@ export function DenchIntegrationsSection(props: DenchIntegrationsSectionProps = 
   );
   const needsRepair = useMemo(
     () =>
-      integrations.some(
+      visibleIntegrations.some(
         (integration) =>
           (integration.id === "exa" || integration.id === "apollo") &&
           integration.health.pluginMissing,
       ) ||
       (resolvedData?.managedPlugins ?? []).some((plugin) => plugin.required && plugin.health.pluginMissing),
-    [integrations, resolvedData?.managedPlugins],
+    [visibleIntegrations, resolvedData?.managedPlugins],
   );
 
   const applyState = useCallback((nextState: IntegrationsState) => {

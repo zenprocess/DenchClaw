@@ -9,6 +9,47 @@ export const id = "apollo-enrichment";
 const ENRICHMENT_BASE_PATH = "/v1/enrichment";
 const APOLLO_ACTIONS = ["people", "company", "people_search"] as const;
 
+/**
+ * Canonical `requiredFields` lists for each enrichment action.
+ *
+ * Why these exist: the Dench Cloud gateway's "default backfill" path —
+ * the one taken when the caller sends no `requiredFields` — was wired to
+ * Apollo's now-removed `mode` field. Apollo returns
+ * `{ code: "deprecated_field", message: "The mode field has been removed.
+ * Use requiredFields to control which fields the waterfall must populate." }`,
+ * which surfaces in chat as "Apollo hit an API issue." The column-based
+ * enrichment route never hits this because it derives `requiredFields`
+ * from the matched column. The chat tool used to leave the parameter
+ * optional with a description telling the agent it could omit. The agent
+ * naturally omitted, the gateway took its broken default-backfill path,
+ * Apollo rejected it.
+ *
+ * The fix: when the caller omits `requiredFields`, the plugin substitutes
+ * the canonical list below. This mirrors the columns defined in
+ * `apps/web/lib/enrichment-columns.ts` (the union of every column's
+ * `requiredFields`), which the column-enrichment route already exercises
+ * in production and which is on the gateway allowlist. Callers can still
+ * override with their own list.
+ */
+const PEOPLE_DEFAULT_REQUIRED_FIELDS = [
+  "fullName",
+  "email",
+  "headline",
+  "linkedinID",
+  "URLs",
+  "phone",
+  "location",
+];
+
+const COMPANY_DEFAULT_REQUIRED_FIELDS = [
+  "name",
+  "website",
+  "industryList",
+  "linkedinID",
+  "totalFunding",
+  "founded",
+];
+
 type UnknownRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): UnknownRecord | undefined {
@@ -95,7 +136,7 @@ const ApolloEnrichParameters = {
       type: "array",
       items: { type: "string" },
       description:
-        "Optional Dench gateway requiredFields contract. The waterfall stops as soon as every listed field is non-null on the merged record. Omit to use the gateway's default backfill list.",
+        "Optional Dench gateway requiredFields contract. The waterfall stops as soon as every listed field is non-null on the merged record. Omit to use the canonical default for the action (people: name/email/headline/linkedin/URLs/phone/location; company: name/website/industry/linkedin/funding/founded). Never omit just to opt out — the gateway's no-list path is deprecated and Apollo rejects it.",
     },
     required_fields: {
       type: "array",
@@ -196,14 +237,17 @@ async function executeApolloEnrich(
 
   try {
     let response: Response;
-    const requiredFields =
+    // Caller-supplied requiredFields wins. When omitted, fall back to the
+    // canonical allowlist for the action so the gateway never takes its
+    // deprecated default-backfill path (which Apollo rejects with the
+    // "mode field has been removed" 400). people_search uses a different
+    // endpoint that does not accept requiredFields, so leave it alone.
+    const callerRequiredFields =
       readStringList(params.requiredFields) ?? readStringList(params.required_fields);
 
     if (action === "people") {
       const body = buildPeopleBody(params);
-      if (requiredFields) {
-        body.requiredFields = requiredFields;
-      }
+      body.requiredFields = callerRequiredFields ?? PEOPLE_DEFAULT_REQUIRED_FIELDS;
       if (!body.email && !body.linkedin_url && !body.first_name && !body.last_name) {
         return jsonResult({
           error: "People enrichment requires at least an email, LinkedIn URL, or person name.",
@@ -224,9 +268,8 @@ async function executeApolloEnrich(
       }
       const url = new URL(`${gatewayUrl}${ENRICHMENT_BASE_PATH}/company`);
       url.searchParams.set("domain", domain);
-      if (requiredFields) {
-        url.searchParams.set("requiredFields", requiredFields.join(","));
-      }
+      const companyRequiredFields = callerRequiredFields ?? COMPANY_DEFAULT_REQUIRED_FIELDS;
+      url.searchParams.set("requiredFields", companyRequiredFields.join(","));
       response = await fetch(url, {
         method: "GET",
         headers: {

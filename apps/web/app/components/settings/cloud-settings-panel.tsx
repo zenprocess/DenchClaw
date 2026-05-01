@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { ChatModelSelector, type ChatModelSelectorOption } from "../chat-model-selector";
 import { Button } from "../ui/button";
+import { Switch } from "../ui/switch";
 import { DenchIntegrationsSection } from "../integrations/dench-integrations-section";
 import { McpServersSection } from "./mcp-servers-section";
 import type { DenchIntegrationId, DenchIntegrationState, IntegrationsState } from "@/lib/integrations";
@@ -152,18 +153,54 @@ function NoticeBanner({ notice }: { notice: ActionNotice }) {
   );
 }
 
-function EnrichmentWaterfallCard() {
+function EnrichmentWaterfallCard({
+  enrichmentIntegration,
+  onToggleEnrichment,
+}: {
+  enrichmentIntegration: DenchIntegrationState | null;
+  onToggleEnrichment: (integration: DenchIntegrationState, enabled: boolean) => void;
+}) {
+  const enrichmentLabel = "Dench Enrichments";
+
   return (
     <div
       className="rounded-xl border px-4 py-4"
       style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
     >
-      <div className="space-y-1">
-        <div className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
-          Dench Enrichment
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <div className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+            Dench Enrichment
+          </div>
+          <div className="max-w-[42rem] text-xs leading-5" style={{ color: "var(--color-text-muted)" }}>
+            Waterfall providers
+          </div>
         </div>
-        <div className="max-w-[42rem] text-xs leading-5" style={{ color: "var(--color-text-muted)" }}>
-          Waterfall providers
+        <div className="flex shrink-0 items-center gap-2">
+          {enrichmentIntegration?.lockBadge ? (
+            <span
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                background: "var(--color-surface-hover)",
+                color: "var(--color-text)",
+              }}
+            >
+              {enrichmentIntegration.lockBadge}
+            </span>
+          ) : null}
+          <Switch
+            aria-label={`Toggle ${enrichmentLabel}`}
+            checked={enrichmentIntegration?.enabled ?? false}
+            disabled={
+              !enrichmentIntegration
+              || enrichmentIntegration.locked
+            }
+            onCheckedChange={(checked) => {
+              if (enrichmentIntegration) {
+                onToggleEnrichment(enrichmentIntegration, checked);
+              }
+            }}
+          />
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -895,12 +932,18 @@ export function CloudSettingsPanel() {
           error={integrationsError}
           savingId={null}
           repairing={repairingIntegrations}
+          excludeIntegrationIds={["apollo"]}
           onToggle={handleDraftIntegrationToggle}
           onRetry={() => void fetchIntegrations()}
           onRepair={() => void handleRepairIntegrations()}
         />
       </div>
-      <EnrichmentWaterfallCard />
+      <EnrichmentWaterfallCard
+        enrichmentIntegration={
+          draftIntegrationsState?.integrations.find((i) => i.id === "apollo") ?? null
+        }
+        onToggleEnrichment={handleDraftIntegrationToggle}
+      />
       <McpServersSection />
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button

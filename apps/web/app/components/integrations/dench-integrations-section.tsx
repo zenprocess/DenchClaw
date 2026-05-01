@@ -174,6 +174,8 @@ type DenchIntegrationsSectionProps = {
   savingId?: DenchIntegrationId | null;
   repairing?: boolean;
   notice?: IntegrationActionNotice | null;
+  /** Hide these integrations from this list (e.g. apollo rendered next to waterfall UI elsewhere). */
+  excludeIntegrationIds?: readonly DenchIntegrationId[];
   onToggle?: (integration: DenchIntegrationState, enabled: boolean) => void;
   onRetry?: () => void;
   onRepair?: () => void;
@@ -219,6 +221,14 @@ export function DenchIntegrationsSection(props: DenchIntegrationsSectionProps = 
   const resolvedNotice = controlled ? props.notice ?? null : notice;
 
   const integrations = useMemo(() => resolvedData?.integrations ?? [], [resolvedData]);
+  const excludedIds = useMemo(
+    () => new Set(props.excludeIntegrationIds ?? []),
+    [props.excludeIntegrationIds],
+  );
+  const visibleIntegrations = useMemo(
+    () => integrations.filter((integration) => !excludedIds.has(integration.id)),
+    [integrations, excludedIds],
+  );
   const needsRepair = useMemo(
     () =>
       integrations.some(
@@ -387,7 +397,7 @@ export function DenchIntegrationsSection(props: DenchIntegrationsSectionProps = 
       )}
 
       <div className="space-y-1">
-        {integrations.map((integration) => (
+        {visibleIntegrations.map((integration) => (
           <IntegrationCard
             key={integration.id}
             integration={integration}

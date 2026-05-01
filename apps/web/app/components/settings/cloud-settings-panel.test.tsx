@@ -10,23 +10,29 @@ vi.mock("../integrations/dench-integrations-section", () => ({
   DenchIntegrationsSection: ({
     data,
     onToggle,
+    excludeIntegrationIds,
   }: {
     data?: IntegrationsState | null;
     onToggle?: (integration: DenchIntegrationState, enabled: boolean) => void;
-  }) => (
-    <div>
-      <div>Mock Integrations</div>
-      {data?.integrations.map((integration) => (
-        <button
-          key={integration.id}
-          type="button"
-          onClick={() => onToggle?.(integration, !integration.enabled)}
-        >
-          {integration.label}:{integration.enabled ? "on" : "off"}:{integration.locked ? "locked" : "open"}
-        </button>
-      ))}
-    </div>
-  ),
+    excludeIntegrationIds?: readonly string[];
+  }) => {
+    const excluded = new Set(excludeIntegrationIds ?? []);
+    const visible = data?.integrations.filter((i) => !excluded.has(i.id)) ?? [];
+    return (
+      <div>
+        <div>Mock Integrations</div>
+        {visible.map((integration) => (
+          <button
+            key={integration.id}
+            type="button"
+            onClick={() => onToggle?.(integration, !integration.enabled)}
+          >
+            {integration.label}:{integration.enabled ? "on" : "off"}:{integration.locked ? "locked" : "open"}
+          </button>
+        ))}
+      </div>
+    );
+  },
 }));
 
 const baseState = {
@@ -309,7 +315,8 @@ describe("CloudSettingsPanel", () => {
     await waitFor(() => {
       expect(screen.getByText("Dench Enrichment")).toBeInTheDocument();
     });
-    expect(screen.getByText("Waterfall providers")).toBeInTheDocument();
+    expect(screen.getByText("Enrich people and company data with multiple providers.")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Toggle Dench Enrichments" })).toBeInTheDocument();
 
     expect(screen.getByTitle("Dench")).toBeInTheDocument();
     expect(screen.getByTitle("Aviato")).toBeInTheDocument();

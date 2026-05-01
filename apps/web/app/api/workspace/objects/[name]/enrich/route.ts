@@ -30,7 +30,22 @@ type EnrichRequestBody = {
 	category: "people" | "company";
 	inputFieldName: string;
 	scope: "all" | "empty" | number;
+	/**
+	 * Optional explicit list of entry IDs to enrich. When provided, the SQL
+	 * scope is narrowed to these entries (intersected with the `scope`
+	 * filter, so e.g. `scope: "empty"` + `entryIds: [...]` enriches only
+	 * those listed entries that don't already have a value). Used by the
+	 * row-selection "Enrich" bulk action so the user can target the rows
+	 * they checked instead of the whole table.
+	 *
+	 * Capped at MAX_ENTRY_IDS to keep the SQL `IN (...)` clause bounded
+	 * and to make abuse via huge payloads obvious.
+	 */
+	entryIds?: string[];
 };
+
+const MAX_ENTRY_IDS = 5000;
+const ENTRY_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 /**
  * POST /api/workspace/objects/[name]/enrich
@@ -66,7 +81,7 @@ export async function POST(
 	}
 
 	const body: EnrichRequestBody = await req.json();
-	const { fieldId, apolloPath, category, inputFieldName, scope } = body;
+	const { fieldId, apolloPath, category, inputFieldName, scope, entryIds } = body;
 
 	if (!fieldId || !apolloPath || !category || !inputFieldName) {
 		return Response.json({ error: "Missing required fields." }, { status: 400 });
@@ -74,6 +89,33 @@ export async function POST(
 
 	if (category !== "people" && category !== "company") {
 		return Response.json({ error: "Invalid category." }, { status: 400 });
+	}
+
+	// Validate entryIds early so a malformed payload fails fast instead of
+	// landing as a SQL error mid-stream. Empty array is treated as "no narrowing"
+	// (i.e. fall through to the regular scope filter) so callers don't have to
+	// special-case the "no-selection" path on the client.
+	let narrowedEntryIds: string[] | undefined;
+	if (entryIds !== undefined) {
+		if (!Array.isArray(entryIds)) {
+			return Response.json({ error: "entryIds must be an array." }, { status: 400 });
+		}
+		if (entryIds.length > MAX_ENTRY_IDS) {
+			return Response.json(
+				{ error: `Too many entryIds (max ${MAX_ENTRY_IDS}).` },
+				{ status: 400 },
+			);
+		}
+		const cleaned: string[] = [];
+		for (const id of entryIds) {
+			if (typeof id !== "string" || !ENTRY_ID_PATTERN.test(id)) {
+				return Response.json({ error: "Invalid entry ID." }, { status: 400 });
+			}
+			cleaned.push(id);
+		}
+		if (cleaned.length > 0) {
+			narrowedEntryIds = cleaned;
+		}
 	}
 
 	// Resolve the canonical column def (for requiredFields + extraction fallbacks).
@@ -148,6 +190,14 @@ export async function POST(
 		LEFT JOIN entry_fields ef ON ef.entry_id = e.id AND ef.field_id = '${sqlEscape(inputFieldId)}'
 		WHERE e.object_id = '${sqlEscape(objectId)}'
 	`;
+
+	if (narrowedEntryIds && narrowedEntryIds.length > 0) {
+		// Compose with the `scope` filter rather than replacing it: lets
+		// callers say "enrich the selected rows that are still empty" when
+		// the row selection includes already-enriched entries.
+		const inList = narrowedEntryIds.map((id) => `'${sqlEscape(id)}'`).join(",");
+		entrySql += ` AND e.id IN (${inList})`;
+	}
 
 	if (scope === "empty") {
 		entrySql += `

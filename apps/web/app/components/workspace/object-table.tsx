@@ -896,6 +896,9 @@ export function ObjectTable({
 							category: payload.category,
 							inputFieldName: payload.inputFieldName,
 							scope: payload.scope,
+							...(payload.entryIds && payload.entryIds.length > 0
+								? { entryIds: payload.entryIds }
+								: {}),
 						}),
 						signal: ac.signal,
 					},
@@ -1523,6 +1526,79 @@ export function ObjectTable({
 		});
 	}, [getSelectedEntryIds, doBulkDelete]);
 
+	// Columns this object knows how to enrich. Derived once per fields update so
+	// the BulkActionBar can both decide whether to surface the Enrich button at
+	// all (no enrichable columns → no button) and so the row-bulk handler can
+	// fan out to every enrichable column without a separate config call.
+	const enrichableColumns = useMemo(() => {
+		const cols: Array<{
+			fieldId: string;
+			fieldName: string;
+			apolloPath: string;
+			category: "people" | "company";
+			inputFieldName: string;
+		}> = [];
+		for (const field of dataFields) {
+			const meta = parseEnrichmentMeta(field.default_value);
+			if (!meta) continue;
+			cols.push({
+				fieldId: field.id,
+				fieldName: field.name,
+				apolloPath: meta.enrichment.apolloPath,
+				category: meta.enrichment.category,
+				inputFieldName: meta.enrichment.inputFieldName,
+			});
+		}
+		return cols;
+	}, [dataFields]);
+
+	const handleBulkEnrich = useCallback(async () => {
+		const selectedIds = getSelectedEntryIds();
+		if (selectedIds.length === 0 || enrichableColumns.length === 0) return;
+		// Sequential rather than parallel: each call uses the same enrichAbortRef
+		// and the same SSE-driven progress UI, so running them in parallel would
+		// stomp on the progress indicator and abort each other. Awaiting also lets
+		// errors surface naturally as toast/progress state per column.
+		for (const col of enrichableColumns) {
+			await new Promise<void>((resolve) => {
+				const onComplete = () => resolve();
+				// startEnrichment doesn't take a completion callback today; piggy-back
+				// on enrichmentProgress going back to null which signals the SSE
+				// stream's `done` event. We poll via a microtask interval kept short
+				// so back-to-back columns chain promptly.
+				startEnrichment({
+					fieldId: col.fieldId,
+					fieldName: col.fieldName,
+					apolloPath: col.apolloPath,
+					category: col.category,
+					inputFieldName: col.inputFieldName,
+					scope: "all",
+					entryIds: selectedIds,
+				});
+				const tick = () => {
+					if (enrichAbortRef.current?.signal.aborted) {
+						onComplete();
+						return;
+					}
+					if (enrichmentProgressRef.current === null) {
+						onComplete();
+						return;
+					}
+					setTimeout(tick, 80);
+				};
+				setTimeout(tick, 80);
+			});
+		}
+	}, [enrichableColumns, getSelectedEntryIds, startEnrichment]);
+
+	// Mirror enrichmentProgress into a ref so handleBulkEnrich's polling loop
+	// can read the latest value without becoming a dependency that re-creates
+	// the callback every render.
+	const enrichmentProgressRef = useRef(enrichmentProgress);
+	useEffect(() => {
+		enrichmentProgressRef.current = enrichmentProgress;
+	}, [enrichmentProgress]);
+
 	const handleDeleteEntry = useCallback((entry: EntryRow) => {
 		const eid = entry.entry_id;
 		const entryId = String(eid != null && typeof eid === "object" ? JSON.stringify(eid) : (eid ?? ""));
@@ -1685,6 +1761,8 @@ export function ObjectTable({
 			onBulkAction={handleBulkAction}
 			onBulkDelete={handleBulkDelete}
 			bulkRunStates={bulkStates}
+			onBulkEnrich={enrichableColumns.length > 0 ? handleBulkEnrich : undefined}
+			enrichBusy={enrichmentProgress !== null}
 		/>
 
 		{confirmState && (

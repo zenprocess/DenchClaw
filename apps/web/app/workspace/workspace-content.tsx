@@ -109,6 +109,7 @@ import {
   ContextMenuTrigger,
 } from "../components/ui/context-menu";
 import { resolveActiveViewSyncDecision } from "./object-view-active-view";
+import { mergeNewlySeenColumns } from "./object-view-column-discovery";
 import { resetWorkspaceStateOnSwitch } from "./workspace-switch";
 // Note: TabBar (the chrome-tabs strip used by the legacy single-strip layout)
 // is no longer used here — the v3 layout has separate inline strips for
@@ -3147,6 +3148,18 @@ function ObjectView({
 
   // Column visibility: maps field IDs to boolean (false = hidden)
   const [viewColumns, setViewColumns] = useState<string[] | undefined>(initialState.cols ?? undefined);
+  // Track which field IDs we've already seen for this object so newly-arriving
+  // fields (created via the Add Column popover, AI yaml edits, etc.) get
+  // auto-added to `viewColumns` instead of defaulting to hidden under an
+  // active visibility whitelist. See `mergeNewlySeenColumns` for the rule.
+  const seenFieldIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const result = mergeNewlySeenColumns(viewColumns, seenFieldIdsRef.current, data.fields);
+    seenFieldIdsRef.current = result.nextSeen;
+    if (result.nextViewColumns !== viewColumns) {
+      setViewColumns(result.nextViewColumns);
+    }
+  }, [data.fields, viewColumns]);
   // Column widths: maps field name to pixel width (persisted in view_settings / saved views)
   const [columnWidths, setColumnWidths] = useState<Record<string, number> | undefined>(
     () => data.viewSettings?.column_widths,

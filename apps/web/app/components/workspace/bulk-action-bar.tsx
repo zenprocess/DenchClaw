@@ -17,6 +17,16 @@ type BulkActionBarProps = {
 	onBulkAction: (action: ActionConfig, fieldId: string) => void;
 	onBulkDelete: () => void;
 	bulkRunStates?: Map<string, BulkRunState>;
+	/**
+	 * Optional bulk-Enrich handler. When provided, an "Enrich" button is
+	 * rendered between the action list and Delete. Object tables only pass
+	 * this when at least one column on the object has enrichment metadata
+	 * (i.e. the operation has something to do); otherwise the button is
+	 * hidden so we never show a no-op control.
+	 */
+	onBulkEnrich?: () => void;
+	/** Disables the Enrich button while an enrichment run is already in flight. */
+	enrichBusy?: boolean;
 };
 
 const VARIANT_COLORS: Record<string, string> = {
@@ -120,6 +130,8 @@ export function BulkActionBar({
 	onBulkAction,
 	onBulkDelete,
 	bulkRunStates,
+	onBulkEnrich,
+	enrichBusy,
 }: BulkActionBarProps) {
 	if (selectedCount === 0) return null;
 
@@ -167,7 +179,59 @@ export function BulkActionBar({
 				</div>
 			)}
 
-			<div className="ml-auto pl-3" style={{ borderLeft: actions.length > 0 ? "1px solid var(--color-border)" : "none" }}>
+			<div
+				className="ml-auto pl-3 flex items-center gap-1.5"
+				style={{ borderLeft: actions.length > 0 ? "1px solid var(--color-border)" : "none" }}
+			>
+				{onBulkEnrich && (
+					<button
+						type="button"
+						onClick={onBulkEnrich}
+						disabled={enrichBusy}
+						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+						style={{
+							background: "color-mix(in srgb, var(--color-accent) 8%, transparent)",
+							border: "1px solid color-mix(in srgb, var(--color-accent) 22%, transparent)",
+							color: "var(--color-accent)",
+							opacity: enrichBusy ? 0.7 : 1,
+							cursor: enrichBusy ? "not-allowed" : "pointer",
+						}}
+						title={
+							enrichBusy
+								? "Enrichment already in progress"
+								: `Enrich the ${selectedCount} selected ${selectedCount === 1 ? "row" : "rows"}`
+						}
+					>
+						{enrichBusy ? (
+							<svg
+								width="12"
+								height="12"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2.5"
+								className="animate-spin"
+							>
+								<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+							</svg>
+						) : (
+							<svg
+								width="12"
+								height="12"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" />
+								<path d="M19 19L19.5 20.5L21 21L19.5 21.5L19 23L18.5 21.5L17 21L18.5 20.5L19 19Z" />
+							</svg>
+						)}
+						Enrich
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={onBulkDelete}

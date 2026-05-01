@@ -85,36 +85,52 @@ describe("apollo-enrichment requiredFields", () => {
     }
   });
 
-  it("omits requiredFields and mode by default for people enrichment", async () => {
-    stateDir = mkdtempSync(path.join(os.tmpdir(), "apollo-enrichment-state-"));
-    process.env.OPENCLAW_STATE_DIR = stateDir;
-    writeAuthProfiles(stateDir, "dc-key");
-    writeOpenClawConfig(stateDir);
+  it(
+    "REGRESSION: substitutes the canonical requiredFields when the caller omits — " +
+      "never emits a no-list payload that hits the gateway's deprecated default-backfill (Apollo `mode` removal)",
+    async () => {
+      stateDir = mkdtempSync(path.join(os.tmpdir(), "apollo-enrichment-state-"));
+      process.env.OPENCLAW_STATE_DIR = stateDir;
+      writeAuthProfiles(stateDir, "dc-key");
+      writeOpenClawConfig(stateDir);
 
-    globalThis.fetch = vi.fn(async (input, init) => {
-      expect(String(input)).toBe("https://gateway.example.com/v1/enrichment/people");
-      expect(init?.method).toBe("POST");
-      const body = JSON.parse(String(init?.body));
-      expect(body).toMatchObject({ email: "jane@acme.com" });
-      expect(body.mode).toBeUndefined();
-      expect(body.requiredFields).toBeUndefined();
-      return new Response(JSON.stringify({ person: { id: "p1" } }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
+      globalThis.fetch = vi.fn(async (input, init) => {
+        expect(String(input)).toBe("https://gateway.example.com/v1/enrichment/people");
+        expect(init?.method).toBe("POST");
+        const body = JSON.parse(String(init?.body));
+        expect(body).toMatchObject({ email: "jane@acme.com" });
+        // mode is NEVER sent; requiredFields is ALWAYS sent (default or caller-supplied).
+        expect(body.mode).toBeUndefined();
+        expect(Array.isArray(body.requiredFields)).toBe(true);
+        // The canonical people allowlist mirrors PEOPLE_ENRICHMENT_COLUMNS in
+        // apps/web/lib/enrichment-columns.ts; keep these in sync.
+        expect(body.requiredFields).toEqual([
+          "fullName",
+          "email",
+          "headline",
+          "linkedinID",
+          "URLs",
+          "phone",
+          "location",
+        ]);
+        return new Response(JSON.stringify({ person: { id: "p1" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }) as typeof fetch;
+
+      const { api, tools } = createApi();
+      register(api);
+
+      expect(tools).toHaveLength(1);
+      await tools[0].execute("call_1", {
+        action: "people",
+        email: "jane@acme.com",
       });
-    }) as typeof fetch;
 
-    const { api, tools } = createApi();
-    register(api);
-
-    expect(tools).toHaveLength(1);
-    await tools[0].execute("call_1", {
-      action: "people",
-      email: "jane@acme.com",
-    });
-
-    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-  });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("forwards camelCase requiredFields to people enrichment when callers provide them", async () => {
     stateDir = mkdtempSync(path.join(os.tmpdir(), "apollo-enrichment-state-"));
@@ -243,6 +259,83 @@ describe("apollo-enrichment requiredFields", () => {
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
+
+  it(
+    "REGRESSION: substitutes the canonical requiredFields when the caller omits for company enrichment — " +
+      "same gateway 'mode' deprecation; the chat-side path was the symptomatic one but company has the same shape",
+    async () => {
+      stateDir = mkdtempSync(path.join(os.tmpdir(), "apollo-enrichment-state-"));
+      process.env.OPENCLAW_STATE_DIR = stateDir;
+      writeAuthProfiles(stateDir, "dc-key");
+      writeOpenClawConfig(stateDir);
+
+      globalThis.fetch = vi.fn(async (input, init) => {
+        const url = new URL(String(input));
+        expect(url.origin + url.pathname).toBe("https://gateway.example.com/v1/enrichment/company");
+        expect(url.searchParams.get("domain")).toBe("acme.com");
+        expect(url.searchParams.get("mode")).toBeNull();
+        const csv = url.searchParams.get("requiredFields");
+        expect(csv).not.toBeNull();
+        expect(csv?.split(",")).toEqual([
+          "name",
+          "website",
+          "industryList",
+          "linkedinID",
+          "totalFunding",
+          "founded",
+        ]);
+        expect(init?.method).toBe("GET");
+        return new Response(JSON.stringify({ organization: { id: "o1" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }) as typeof fetch;
+
+      const { api, tools } = createApi();
+      register(api);
+
+      await tools[0].execute("call_1", {
+        action: "company",
+        domain: "acme.com",
+      });
+
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it(
+    "people_search does NOT receive a requiredFields default (different gateway endpoint, " +
+      "different params; sending one would 400)",
+    async () => {
+      stateDir = mkdtempSync(path.join(os.tmpdir(), "apollo-enrichment-state-"));
+      process.env.OPENCLAW_STATE_DIR = stateDir;
+      writeAuthProfiles(stateDir, "dc-key");
+      writeOpenClawConfig(stateDir);
+
+      globalThis.fetch = vi.fn(async (input, init) => {
+        expect(String(input)).toBe(
+          "https://gateway.example.com/v1/enrichment/people/search",
+        );
+        const body = JSON.parse(String(init?.body));
+        expect(body.requiredFields).toBeUndefined();
+        expect(body.mode).toBeUndefined();
+        return new Response(JSON.stringify({ people: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }) as typeof fetch;
+
+      const { api, tools } = createApi();
+      register(api);
+
+      await tools[0].execute("call_1", {
+        action: "people_search",
+        personTitles: ["Founder"],
+      });
+
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("forwards CSV requiredFields query param for company enrichment", async () => {
     stateDir = mkdtempSync(path.join(os.tmpdir(), "apollo-enrichment-state-"));

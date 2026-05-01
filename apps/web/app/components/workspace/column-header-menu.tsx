@@ -498,6 +498,14 @@ export type EnrichmentStartPayload = {
 	category: "people" | "company";
 	inputFieldName: string;
 	scope: "all" | "empty" | number;
+	/**
+	 * Optional explicit list of entry IDs to narrow enrichment to. Passed
+	 * through to the `/enrich` route's `entryIds` parameter. Used by the
+	 * row-selection bulk-Enrich action so the user can target the rows
+	 * they checked instead of the whole table. Omit to enrich the full
+	 * `scope`.
+	 */
+	entryIds?: string[];
 };
 
 const ENRICH_SCOPE_OPTIONS: Array<{

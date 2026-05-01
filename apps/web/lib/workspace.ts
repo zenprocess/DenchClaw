@@ -1252,7 +1252,101 @@ export function duckdbQueryOnFile<T = Record<string, unknown>>(
   }
 }
 
-/** Async version of duckdbQueryOnFile — does not block the event loop. */
+type DuckdbReadAttemptResult<T> =
+  | { ok: true; rows: T[] }
+  | { ok: false; retriable: boolean; error: unknown; errorMessage: string };
+
+/**
+ * Run one DuckDB read against a specific DB file and classify the outcome
+ * so callers can decide whether to retry. DuckDB acquires an exclusive
+ * file lock for any operation; concurrent CLI processes against the same
+ * file collide. When stderr contains "Conflicting lock" or "Could not set
+ * lock" the failure is transient and worth retrying. Other failures (bad
+ * SQL, missing table) are terminal and surfaced unchanged.
+ */
+async function runDuckdbReadOnce<T>(
+  bin: string,
+  dbFilePath: string,
+  sql: string,
+  timeoutMs: number,
+): Promise<DuckdbReadAttemptResult<T>> {
+  try {
+    const { stdout } = await execFileAsync(bin, ["-json", dbFilePath, sql], {
+      encoding: "utf-8",
+      timeout: timeoutMs,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    const trimmed = stdout.trim();
+    if (!trimmed || trimmed === "[]") {return { ok: true, rows: [] };}
+    return { ok: true, rows: JSON.parse(trimmed) as T[] };
+  } catch (err) {
+    const stderr = (err as { stderr?: string | Buffer }).stderr;
+    const stderrText =
+      typeof stderr === "string"
+        ? stderr
+        : Buffer.isBuffer(stderr)
+          ? stderr.toString("utf-8")
+          : (err as Error).message ?? "";
+    const lockConflict =
+      stderrText.includes("Conflicting lock") ||
+      stderrText.includes("Could not set lock");
+    return {
+      ok: false,
+      retriable: lockConflict,
+      error: err,
+      errorMessage: stderrText.slice(0, 800) || (err as Error).message || "duckdb read failed",
+    };
+  }
+}
+
+/**
+ * Run a DuckDB read with the same retry-on-lock-conflict semantics that
+ * `duckdbExecOnFileAsync` already uses for writes. Resolves with rows on
+ * success, or with an error result after retries are exhausted (so callers
+ * can choose between returning `[]` or rethrowing).
+ *
+ * Why this exists: DuckDB's CLI takes an exclusive file lock for every
+ * operation. Back-to-back operations from the workspace (POST /fields,
+ * server-side pivot view rebuild, then the immediate GET /objects/[name]
+ * that the client fires after the write completes) can race a still-running
+ * sibling on the same file. Without retry, the read fails with a lock
+ * conflict and silently returns `[]`. The route then treats the empty
+ * result as "object not found" and 404s — the right panel goes blank and
+ * the user sees a "crash" right after creating a column. Reads need the
+ * same retry resilience writes already have.
+ */
+async function runDuckdbReadWithRetry<T>(
+  bin: string,
+  dbFilePath: string,
+  sql: string,
+  timeoutMs: number,
+): Promise<DuckdbReadAttemptResult<T>> {
+  const MAX_RETRIES = 8;
+  let attempt = 0;
+  let lastResult: DuckdbReadAttemptResult<T> = {
+    ok: false,
+    retriable: false,
+    error: new Error("no attempts made"),
+    errorMessage: "no attempts made",
+  };
+  while (attempt < MAX_RETRIES) {
+    lastResult = await runDuckdbReadOnce<T>(bin, dbFilePath, sql, timeoutMs);
+    if (lastResult.ok) {return lastResult;}
+    if (!lastResult.retriable) {return lastResult;}
+    const delay = Math.min(4000, 250 * 2 ** attempt) + Math.floor(Math.random() * 100);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    attempt += 1;
+  }
+  return lastResult;
+}
+
+/**
+ * Async version of duckdbQueryOnFile — does not block the event loop.
+ * Retries lock conflicts (transient races with concurrent CLI processes)
+ * with exponential backoff before giving up. Persistent failures still
+ * resolve to `[]`, matching the legacy contract for callers that don't
+ * distinguish errors from empty results.
+ */
 export async function duckdbQueryOnFileAsync<T = Record<string, unknown>>(
   dbFilePath: string,
   sql: string,
@@ -1260,26 +1354,18 @@ export async function duckdbQueryOnFileAsync<T = Record<string, unknown>>(
   const bin = resolveDuckdbBin();
   if (!bin) {return [];}
 
-  try {
-    const { stdout } = await execFileAsync(bin, ["-json", dbFilePath, sql], {
-      encoding: "utf-8",
-      timeout: 15_000,
-      maxBuffer: 10 * 1024 * 1024,
-    });
-
-    const trimmed = stdout.trim();
-    if (!trimmed || trimmed === "[]") {return [];}
-    return JSON.parse(trimmed) as T[];
-  } catch {
-    return [];
-  }
+  const result = await runDuckdbReadWithRetry<T>(bin, dbFilePath, sql, 15_000);
+  if (result.ok) {return result.rows;}
+  console.error(`[duckdb] query gave up on ${dbFilePath}: ${result.errorMessage}`);
+  return [];
 }
 
 /**
  * Like `duckdbQueryOnFileAsync`, but rethrows errors instead of silently
  * returning `[]`. Use when callers need to distinguish "no rows" from "query
  * failed" (e.g. to trigger an EAV fallback when a pivot view is missing or
- * has a bad identifier).
+ * has a bad identifier). Lock conflicts are still retried with exponential
+ * backoff; only persistent failures throw.
  */
 export async function duckdbQueryOnFileAsyncStrict<T = Record<string, unknown>>(
   dbFilePath: string,
@@ -1290,15 +1376,11 @@ export async function duckdbQueryOnFileAsyncStrict<T = Record<string, unknown>>(
     throw new Error("DuckDB CLI binary not found");
   }
 
-  const { stdout } = await execFileAsync(bin, ["-json", dbFilePath, sql], {
-    encoding: "utf-8",
-    timeout: 15_000,
-    maxBuffer: 10 * 1024 * 1024,
-  });
-
-  const trimmed = stdout.trim();
-  if (!trimmed || trimmed === "[]") {return [];}
-  return JSON.parse(trimmed) as T[];
+  const result = await runDuckdbReadWithRetry<T>(bin, dbFilePath, sql, 15_000);
+  if (result.ok) {return result.rows;}
+  throw result.error instanceof Error
+    ? result.error
+    : new Error(result.errorMessage);
 }
 
 /**

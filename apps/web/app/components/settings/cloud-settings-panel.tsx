@@ -173,7 +173,7 @@ function EnrichmentWaterfallCard({
             Dench Enrichment
           </div>
           <div className="max-w-[42rem] text-xs leading-5" style={{ color: "var(--color-text-muted)" }}>
-            Waterfall providers
+            Enrich people and company data with multiple providers.
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">

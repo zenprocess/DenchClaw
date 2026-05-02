@@ -7,6 +7,11 @@ export const meetingPrepBrief: SkillTemplateDefinition = {
   category: "Meetings",
   outcome:
     "A prep skill that turns upcoming meetings into concise briefs with relationship context, company research, open questions, and suggested agenda.",
+  requiredApps: [
+    { slug: "google-calendar", name: "Google Calendar" },
+    { slug: "gmail", name: "Gmail" },
+    { slug: "hubspot", name: "HubSpot" },
+  ],
   triggerModes: ["scheduled", "manual"],
   autonomy: "Creates drafts",
   interviewTopics: [

@@ -7,6 +7,11 @@ export const pipelineHygieneDigest: SkillTemplateDefinition = {
   category: "CRM hygiene",
   outcome:
     "A scheduled pipeline hygiene skill that reviews CRM quality, identifies stuck opportunities or missing next steps, and proposes cleanup actions.",
+  requiredApps: [
+    { slug: "hubspot", name: "HubSpot" },
+    { slug: "salesforce", name: "Salesforce" },
+    { slug: "slack", name: "Slack" },
+  ],
   triggerModes: ["scheduled", "manual"],
   autonomy: "Updates CRM",
   interviewTopics: [

@@ -7,6 +7,11 @@ export const postMeetingFollowThrough: SkillTemplateDefinition = {
   category: "Meetings",
   outcome:
     "A follow-through skill that turns meeting notes or a short user recap into CRM updates, next steps, owner tasks, and follow-up drafts or sends.",
+  requiredApps: [
+    { slug: "google-calendar", name: "Google Calendar" },
+    { slug: "gmail", name: "Gmail" },
+    { slug: "hubspot", name: "HubSpot" },
+  ],
   triggerModes: ["manual", "scheduled"],
   autonomy: "Can automate",
   interviewTopics: [

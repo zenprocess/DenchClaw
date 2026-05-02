@@ -7,6 +7,11 @@ export const icpOutreachBuilder: SkillTemplateDefinition = {
   category: "Find leads",
   outcome:
     "A repeatable outreach skill that finds or accepts target leads, researches each person, writes personalized messages, and follows a configured send or approval policy.",
+  requiredApps: [
+    { slug: "gmail", name: "Gmail" },
+    { slug: "hubspot", name: "HubSpot" },
+    { slug: "apollo", name: "Apollo" },
+  ],
   triggerModes: ["manual", "scheduled"],
   autonomy: "Can automate",
   interviewTopics: [

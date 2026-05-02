@@ -18,6 +18,7 @@ export {
   SKILL_TEMPLATE_CATEGORIES,
   SKILL_TEMPLATE_IDS,
   type SkillTemplate,
+  type SkillTemplateApp,
   type SkillTemplateAutonomy,
   type SkillTemplateCategory,
   type SkillTemplateId,
@@ -35,12 +36,12 @@ const TEMPLATE_DEFINITIONS: readonly SkillTemplateDefinition[] = [
   pipelineHygieneDigest,
 ];
 
-export const SKILL_TEMPLATES: readonly SkillTemplate[] = [
-  ...TEMPLATE_DEFINITIONS.map((template) => ({
+export const SKILL_TEMPLATES: readonly SkillTemplate[] = TEMPLATE_DEFINITIONS.map(
+  (template) => ({
     ...template,
     buildPrompt: () => buildGtmSkillPrompt(template),
-  })),
-];
+  }),
+);
 
 export function isSkillTemplateId(value: unknown): value is SkillTemplateId {
   return (

@@ -2,10 +2,44 @@
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SkillTemplateGallery } from "./skill-template-gallery";
 
 describe("SkillTemplateGallery", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url;
+        if (url.startsWith("/api/composio/connections")) {
+          return new Response(JSON.stringify({ items: [], toolkits: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url.startsWith("/api/composio/toolkits")) {
+          return new Response(JSON.stringify({ items: [] }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ error: "Unexpected request" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("filters templates by search query", async () => {
     const user = userEvent.setup();
 
@@ -49,7 +83,7 @@ describe("SkillTemplateGallery", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("calls selection callback from accessible card action", async () => {
+  it("opens setup modal before calling selection callback", async () => {
     const user = userEvent.setup();
     const onSelectTemplate = vi.fn();
 
@@ -68,6 +102,13 @@ describe("SkillTemplateGallery", () => {
     expect(templateCard).toHaveAccessibleName(/Start/i);
 
     await user.click(templateCard);
+
+    expect(
+      await screen.findByRole("heading", { name: /Morning Lead Research Brief/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Connect required apps")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Skip setup" }));
 
     expect(onSelectTemplate).toHaveBeenCalledWith("morning-lead-research-brief");
   });

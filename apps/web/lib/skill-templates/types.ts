@@ -29,12 +29,18 @@ export type SkillTemplateAutonomy =
   | "Updates CRM"
   | "Can automate";
 
+export type SkillTemplateApp = {
+  slug: string;
+  name: string;
+};
+
 export type SkillTemplate = {
   id: SkillTemplateId;
   title: string;
   summary: string;
   category: SkillTemplateCategory;
   outcome: string;
+  requiredApps: readonly SkillTemplateApp[];
   triggerModes: readonly SkillTemplateTriggerMode[];
   autonomy: SkillTemplateAutonomy;
   interviewTopics: readonly string[];

@@ -7,6 +7,11 @@ export const targetAccountListBuilder: SkillTemplateDefinition = {
   category: "Find leads",
   outcome:
     "A reusable prospecting skill that turns an ICP into a ranked list of target companies or contacts, with evidence and next actions saved into Dench CRM.",
+  requiredApps: [
+    { slug: "hubspot", name: "HubSpot" },
+    { slug: "salesforce", name: "Salesforce" },
+    { slug: "apollo", name: "Apollo" },
+  ],
   triggerModes: ["manual", "scheduled"],
   autonomy: "Updates CRM",
   interviewTopics: [

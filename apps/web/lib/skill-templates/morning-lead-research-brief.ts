@@ -7,6 +7,11 @@ export const morningLeadResearchBrief: SkillTemplateDefinition = {
   category: "Research",
   outcome:
     "A scheduled research skill that reviews priority leads and accounts each morning, finds fresh signals, and produces a concise action brief.",
+  requiredApps: [
+    { slug: "hubspot", name: "HubSpot" },
+    { slug: "gmail", name: "Gmail" },
+    { slug: "google-calendar", name: "Google Calendar" },
+  ],
   triggerModes: ["scheduled", "manual"],
   autonomy: "Creates drafts",
   interviewTopics: [

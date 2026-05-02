@@ -7,6 +7,10 @@ export const staleThreadFollowUpAgent: SkillTemplateDefinition = {
   category: "Follow up",
   outcome:
     "A follow-up skill that scans CRM and Gmail for stale conversations, decides the next best nudge, and drafts or sends follow-ups under explicit rules.",
+  requiredApps: [
+    { slug: "gmail", name: "Gmail" },
+    { slug: "hubspot", name: "HubSpot" },
+  ],
   triggerModes: ["scheduled", "manual"],
   autonomy: "Can automate",
   interviewTopics: [

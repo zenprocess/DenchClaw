@@ -7,6 +7,11 @@ export const crmContactEnricher: SkillTemplateDefinition = {
   category: "CRM hygiene",
   outcome:
     "A reusable enrichment skill that finds missing contact and company details, updates CRM safely, and leaves clear source-backed notes.",
+  requiredApps: [
+    { slug: "hubspot", name: "HubSpot" },
+    { slug: "salesforce", name: "Salesforce" },
+    { slug: "apollo", name: "Apollo" },
+  ],
   triggerModes: ["manual", "scheduled"],
   autonomy: "Updates CRM",
   interviewTopics: [

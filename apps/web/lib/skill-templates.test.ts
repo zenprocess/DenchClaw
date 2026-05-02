@@ -15,7 +15,7 @@ import {
 describe("skill templates", () => {
   it("exposes the power-user template pack", () => {
     expect(SKILL_TEMPLATES.length).toBeGreaterThanOrEqual(30);
-    expect(SKILL_TEMPLATES).toHaveLength(38);
+    expect(SKILL_TEMPLATES).toHaveLength(44);
     expect(SKILL_TEMPLATES.map((template) => template.id)).toEqual(
       SKILL_TEMPLATE_IDS,
     );
@@ -26,6 +26,7 @@ describe("skill templates", () => {
   it("validates known template ids", () => {
     expect(isSkillTemplateId("icp-outreach-builder")).toBe(true);
     expect(isSkillTemplateId("pipeline-hygiene-digest")).toBe(true);
+    expect(isSkillTemplateId("deck-claim-verifier")).toBe(true);
     expect(isSkillTemplateId("yc-outreach")).toBe(false);
     expect(isSkillTemplateId(null)).toBe(false);
   });

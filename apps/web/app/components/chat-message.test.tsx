@@ -192,6 +192,87 @@ describe("ChatMessage", () => {
     expect(button.querySelector('img[src="/integrations/stripe-logomark.svg"]')).toBeNull();
   });
 
+  it("renders dench-question blocks as single-choice cards", async () => {
+    const user = userEvent.setup();
+    const onQuestionAnswer = vi.fn();
+
+    render(
+      <ChatMessage
+        message={{
+          id: "assistant-question-single",
+          role: "assistant",
+          parts: [{
+            type: "text",
+            text: `Pick a system of record.
+
+\`\`\`dench-question
+{
+  "id": "system-of-record",
+  "prompt": "Where should I save new leads?",
+  "options": [
+    { "id": "dench", "label": "Dench CRM" },
+    { "id": "hubspot", "label": "HubSpot" }
+  ]
+}
+\`\`\``,
+          }],
+        }}
+        onQuestionAnswer={onQuestionAnswer}
+      />,
+    );
+
+    expect(screen.getByText("Pick a system of record.")).toBeInTheDocument();
+    expect(screen.getByText("Where should I save new leads?")).toBeInTheDocument();
+    expect(screen.queryByText(/dench-question/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Dench CRM/ }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(onQuestionAnswer).toHaveBeenCalledWith(expect.stringContaining("Dench CRM (dench)"));
+  });
+
+  it("supports multi-choice dench-question cards", async () => {
+    const user = userEvent.setup();
+    const onQuestionAnswer = vi.fn();
+
+    render(
+      <ChatMessage
+        message={{
+          id: "assistant-question-multi",
+          role: "assistant",
+          parts: [{
+            type: "text",
+            text: `\`\`\`dench-question
+{
+  "id": "signals",
+  "prompt": "Which buying signals should matter?",
+  "allowMultiple": true,
+  "optional": true,
+  "options": [
+    { "id": "hiring", "label": "Hiring sales roles" },
+    { "id": "funding", "label": "Raised funding" },
+    { "id": "new-tool", "label": "Recently adopted a competitor" }
+  ]
+}
+\`\`\``,
+          }],
+        }}
+        onQuestionAnswer={onQuestionAnswer}
+      />,
+    );
+
+    expect(screen.getByText("Select all")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Hiring sales roles/ }));
+    await user.click(screen.getByRole("button", { name: /Raised funding/ }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    const answer = onQuestionAnswer.mock.calls[0][0] as string;
+    expect(answer).toContain("Selected options:");
+    expect(answer).toContain("Hiring sales roles (hiring)");
+    expect(answer).toContain("Raised funding (funding)");
+  });
+
   it("renders persisted Dench Integration failures with their error details", async () => {
     const user = userEvent.setup();
 

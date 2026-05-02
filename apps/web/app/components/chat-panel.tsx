@@ -2031,6 +2031,13 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 		// change, notably `isStreaming`).
 		useEffect(() => { handleEditorSubmitRef.current = handleEditorSubmit; }, [handleEditorSubmit]);
 
+		const handleQuestionAnswer = useCallback(
+			(answerText: string) => {
+				void handleEditorSubmit(answerText, [], "", []);
+			},
+			[handleEditorSubmit],
+		);
+
 		// ── Queue flush: send the next queued message once the stream finishes ──
 		const prevFlushStatusRef = useRef(status);
 		useEffect(() => {
@@ -2814,6 +2821,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(
 									onSubagentClick={onSubagentClick}
 									onFilePathClick={onFilePathClick}
 									onComposioAction={onComposioAction}
+									onQuestionAnswer={handleQuestionAnswer}
 									sessionId={currentSessionId}
 									voicePlaybackEnabled={voicePlaybackEnabled}
 									userHtmlMap={userHtmlMapRef.current}

@@ -20,6 +20,21 @@ Available trigger modes for this product are only manual trigger and cron/schedu
 
 Start by interviewing me one question at a time. Do not echo this setup back to me. Ask the smallest next question needed, keep each interview turn under 120 words unless options are essential, wait for my answer, then ask the next question. Do not create or edit any files until you have enough context to tailor the workflow.
 
+When the next question has clear choices, ask it with a Dench question card instead of plain text bullets. Use this exact fenced JSON shape, then stop and wait for my selection:
+\`\`\`dench-question
+{
+  "id": "short-stable-question-id",
+  "prompt": "The one question you need answered",
+  "allowMultiple": false,
+  "optional": false,
+  "options": [
+    { "id": "first-option", "label": "First option" },
+    { "id": "second-option", "label": "Second option" }
+  ]
+}
+\`\`\`
+Set "allowMultiple": true only when more than one option can be selected. Add "optional": true only when skipping is genuinely acceptable. Keep option labels short and include descriptions only when they prevent ambiguity.
+
 Before writing the final SKILL.md, gather these specifics:
 ${bulletList(template.interviewTopics)}
 

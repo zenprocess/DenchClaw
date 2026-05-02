@@ -42,7 +42,11 @@ export function isSkillTemplateId(value: unknown): value is SkillTemplateId {
 }
 
 export function getSkillTemplate(id: SkillTemplateId): SkillTemplate {
-  return SKILL_TEMPLATES.find((template) => template.id === id) ?? SKILL_TEMPLATES[0];
+  const template = SKILL_TEMPLATES.find((candidate) => candidate.id === id);
+  if (!template) {
+    throw new Error(`Unknown skill template: ${id}`);
+  }
+  return template;
 }
 
 export function buildSkillTemplatePrompt(id: SkillTemplateId): string {

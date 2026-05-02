@@ -4,6 +4,7 @@ import {
   buildSkillTemplatePrompt,
   getSkillTemplate,
   isSkillTemplateId,
+  type SkillTemplateId,
 } from "./skill-templates";
 
 describe("skill templates", () => {
@@ -16,6 +17,14 @@ describe("skill templates", () => {
     expect(isSkillTemplateId("linkedin-outreach")).toBe(true);
     expect(isSkillTemplateId("yc-outreach")).toBe(false);
     expect(isSkillTemplateId(null)).toBe(false);
+  });
+
+  it("throws when a known id is missing from the template registry", () => {
+    const missingTemplateId = "missing-template" as SkillTemplateId;
+
+    expect(() => getSkillTemplate(missingTemplateId)).toThrow(
+      "Unknown skill template: missing-template",
+    );
   });
 
   it("builds a reusable skill creation prompt", () => {

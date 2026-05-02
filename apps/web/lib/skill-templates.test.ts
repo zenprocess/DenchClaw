@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   SKILL_TEMPLATES,
@@ -58,6 +60,16 @@ describe("skill templates", () => {
       expect(template.triggerModes.length).toBeGreaterThan(0);
       expect(template.interviewTopics.length).toBeGreaterThan(3);
       expect(template.skillInstructions.length).toBeGreaterThan(3);
+    }
+  });
+
+  it("keeps each template definition in its own tiny file", () => {
+    for (const template of SKILL_TEMPLATES) {
+      const templateFile = fileURLToPath(
+        new URL(`./skill-templates/${template.id}.ts`, import.meta.url),
+      );
+
+      expect(existsSync(templateFile)).toBe(true);
     }
   });
 });

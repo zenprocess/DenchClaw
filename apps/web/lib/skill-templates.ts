@@ -15,6 +15,7 @@ import {
 } from "./skill-templates/types";
 
 export {
+  SKILL_TEMPLATE_CATEGORIES,
   SKILL_TEMPLATE_IDS,
   type SkillTemplate,
   type SkillTemplateAutonomy,

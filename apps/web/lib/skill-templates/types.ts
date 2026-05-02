@@ -11,12 +11,16 @@ export const SKILL_TEMPLATE_IDS = [
 
 export type SkillTemplateId = (typeof SKILL_TEMPLATE_IDS)[number];
 
+export const SKILL_TEMPLATE_CATEGORIES = [
+  "Find leads",
+  "Research",
+  "Follow up",
+  "Meetings",
+  "CRM hygiene",
+] as const;
+
 export type SkillTemplateCategory =
-  | "Find leads"
-  | "Research"
-  | "Follow up"
-  | "Meetings"
-  | "CRM hygiene";
+  (typeof SKILL_TEMPLATE_CATEGORIES)[number];
 
 export type SkillTemplateTriggerMode = "manual" | "scheduled";
 

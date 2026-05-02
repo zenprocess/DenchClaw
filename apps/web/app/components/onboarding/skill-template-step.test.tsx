@@ -54,7 +54,7 @@ describe("SkillTemplateStep", () => {
       currentStep: "complete",
       completedSteps: [...baseState.completedSteps, "skill-template"],
       skillTemplate: {
-        templateId: "meeting-prep-brief",
+        templateId: "company-deep-researcher",
         selectedAt: "2026-04-30T00:00:00.000Z",
       },
     };
@@ -69,7 +69,8 @@ describe("SkillTemplateStep", () => {
 
     render(<SkillTemplateStep state={baseState} onAdvance={onAdvance} />);
 
-    await user.click(screen.getByRole("button", { name: /Meeting Prep Brief/i }));
+    await user.click(screen.getByRole("button", { name: /Company Deep Researcher/i }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByRole("button", { name: "Start with this" }));
 
     await waitFor(() => {
@@ -79,7 +80,7 @@ describe("SkillTemplateStep", () => {
       {
         from: "skill-template",
         to: "complete",
-        skillTemplate: { templateId: "meeting-prep-brief" },
+        skillTemplate: { templateId: "company-deep-researcher" },
       },
     ]);
   });

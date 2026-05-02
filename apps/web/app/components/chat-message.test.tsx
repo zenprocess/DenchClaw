@@ -261,7 +261,7 @@ describe("ChatMessage", () => {
       />,
     );
 
-    expect(screen.getByText("Select all")).toBeInTheDocument();
+    expect(screen.getByText("Select multiple")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Hiring sales roles/ }));
     await user.click(screen.getByRole("button", { name: /Raised funding/ }));
@@ -302,6 +302,7 @@ describe("ChatMessage", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: "Add details" }));
     await user.type(
       screen.getByPlaceholderText("Describe your CRM rule..."),
       "Decide this after the first run.",

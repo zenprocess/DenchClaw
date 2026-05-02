@@ -496,16 +496,14 @@ function TemplateSetupModal({
       const response = await fetch(
         `/api/composio/connections?include_toolkits=1${options?.fresh ? "&fresh=1" : ""}`,
       );
+      const payload = (await response.json().catch(() => ({}))) as
+        ComposioConnectionsResponse & { error?: string; toolkits?: ComposioToolkit[] };
       if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
         throw new Error(
-          (payload as { error?: string }).error
+          payload.error
             ?? `Failed to load connected apps (${response.status})`,
         );
       }
-      const payload = (await response.json()) as ComposioConnectionsResponse & {
-        toolkits?: ComposioToolkit[];
-      };
       setState({
         connections: extractComposioConnections(payload),
         toolkits: payload.toolkits ?? [],

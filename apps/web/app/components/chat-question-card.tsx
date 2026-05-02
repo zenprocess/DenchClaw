@@ -11,14 +11,17 @@ type ChatQuestionCardProps = {
 export function ChatQuestionCard({ question, onAnswer }: ChatQuestionCardProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [details, setDetails] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [submitted, setSubmitted] = useState<"answered" | "skipped" | null>(null);
 
   const selectedOptions = useMemo(
     () => question.options.filter((option) => selectedIds.has(option.id)),
     [question.options, selectedIds],
   );
-
+  const customOptionSelected = selectedOptions.some(isCustomOption);
+  const showDetails = detailsOpen || customOptionSelected || details.trim().length > 0;
   const canSubmit = selectedOptions.length > 0 && !submitted;
+  const modeLabel = question.allowMultiple ? "Select multiple" : "Pick one";
 
   function toggleOption(optionId: string) {
     if (submitted) {
@@ -58,128 +61,160 @@ export function ChatQuestionCard({ question, onAnswer }: ChatQuestionCardProps) 
 
   return (
     <section
-      className="my-2 overflow-hidden rounded-2xl border"
+      className="my-2 overflow-hidden rounded-xl border"
       style={{
-        borderColor: "var(--color-border)",
+        borderColor: "color-mix(in srgb, var(--color-border) 78%, transparent)",
         background: "var(--color-surface)",
-        boxShadow: "0 10px 30px color-mix(in srgb, var(--color-text) 6%, transparent)",
       }}
       aria-label="Question from assistant"
     >
-      <div className="border-b px-4 py-3" style={{ borderColor: "var(--color-border)" }}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p
-              className="text-[11px] font-semibold uppercase tracking-[0.08em]"
-              style={{ color: "var(--color-accent)" }}
-            >
-              Choose an answer
-            </p>
-            <h3
-              className="mt-1 text-[14px] font-medium leading-relaxed"
-              style={{ color: "var(--color-text)" }}
-            >
-              {question.prompt}
-            </h3>
-          </div>
+      <div
+        className="flex items-center justify-between gap-3 border-b px-3 py-2"
+        style={{ borderColor: "color-mix(in srgb, var(--color-border) 70%, transparent)" }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
           <span
-            className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium"
-            style={{
-              background: "color-mix(in srgb, var(--color-accent) 12%, transparent)",
-              color: "var(--color-accent)",
-            }}
-          >
-            {question.allowMultiple ? "Select all" : "Pick one"}
-          </span>
-        </div>
-      </div>
-
-      <div className="space-y-2 px-4 py-3">
-        {question.options.map((option, index) => {
-          const selected = selectedIds.has(option.id);
-          return (
-            <button
-              key={option.id}
-              type="button"
-              disabled={!!submitted}
-              aria-pressed={selected}
-              onClick={() => toggleOption(option.id)}
-              className="group flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-[background,border-color,opacity] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] disabled:cursor-default disabled:opacity-75"
-              style={{
-                borderColor: selected
-                  ? "var(--color-accent)"
-                  : "color-mix(in srgb, var(--color-border) 78%, transparent)",
-                background: selected
-                  ? "color-mix(in srgb, var(--color-accent) 10%, transparent)"
-                  : "var(--color-background)",
-              }}
-            >
-              <span
-                className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold"
-                style={{
-                  borderColor: selected ? "var(--color-accent)" : "var(--color-border)",
-                  background: selected ? "var(--color-accent)" : "transparent",
-                  color: selected ? "#fff" : "var(--color-text-muted)",
-                }}
-              >
-                {question.allowMultiple && selected ? "OK" : String.fromCharCode(65 + index)}
-              </span>
-              <span className="min-w-0">
-                <span
-                  className="block text-[13px] font-medium leading-5"
-                  style={{ color: "var(--color-text)" }}
-                >
-                  {option.label}
-                </span>
-                {option.description && (
-                  <span
-                    className="mt-0.5 block text-[12px] leading-relaxed"
-                    style={{ color: "var(--color-text-muted)" }}
-                  >
-                    {option.description}
-                  </span>
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="space-y-3 px-4 pb-4">
-        <label className="block">
-          <span
-            className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.06em]"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            Optional context
-          </span>
-          <textarea
-            value={details}
-            disabled={!!submitted}
-            onChange={(event) => setDetails(event.target.value)}
-            placeholder={question.optionalDetailsPlaceholder ?? "Add anything the options miss..."}
-            className="min-h-[66px] w-full resize-y rounded-xl border px-3 py-2 text-[13px] leading-relaxed outline-none transition-[border-color,box-shadow] disabled:opacity-70"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border"
             style={{
               borderColor: "var(--color-border)",
-              background: "var(--color-background)",
-              color: "var(--color-text)",
+              color: "var(--color-text-muted)",
             }}
-            onFocus={(event) => {
-              event.currentTarget.style.borderColor = "var(--color-accent)";
-              event.currentTarget.style.boxShadow =
-                "0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent)";
-            }}
-            onBlur={(event) => {
-              event.currentTarget.style.borderColor = "var(--color-border)";
-              event.currentTarget.style.boxShadow = "none";
-            }}
-          />
-        </label>
+            aria-hidden="true"
+          >
+            <QuestionIcon />
+          </span>
+          <span
+            className="text-[11px] font-semibold"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Question
+          </span>
+        </div>
+        <span
+          className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium"
+          style={{
+            background: "color-mix(in srgb, var(--color-accent) 12%, transparent)",
+            color: "var(--color-accent)",
+          }}
+        >
+          {modeLabel}
+        </span>
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
-            {submitted === "answered" && "Answer sent."}
-            {submitted === "skipped" && "Question skipped."}
+      <div className="px-3 pb-3 pt-2.5">
+        <div className="flex gap-2">
+          <span
+            className="mt-[2px] shrink-0 text-[13px] font-semibold tabular-nums"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            1.
+          </span>
+          <h3
+            className="min-w-0 text-[13px] font-semibold leading-relaxed"
+            style={{ color: "var(--color-text)" }}
+          >
+            {question.prompt}
+          </h3>
+        </div>
+
+        <div className="mt-2 space-y-1.5">
+          {question.options.map((option, index) => {
+            const selected = selectedIds.has(option.id);
+            const letter = String.fromCharCode(65 + index);
+            return (
+              <button
+                key={option.id}
+                type="button"
+                disabled={!!submitted}
+                aria-pressed={selected}
+                onClick={() => toggleOption(option.id)}
+                className="flex w-full items-start gap-2 rounded-lg border px-2.5 py-2 text-left transition-[background,border-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] disabled:cursor-default disabled:opacity-70"
+                style={{
+                  borderColor: selected
+                    ? "var(--color-accent)"
+                    : "color-mix(in srgb, var(--color-border) 72%, transparent)",
+                  background: selected
+                    ? "color-mix(in srgb, var(--color-accent) 12%, var(--color-surface))"
+                    : "color-mix(in srgb, var(--color-background) 64%, transparent)",
+                }}
+              >
+                <span
+                  className="mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-semibold"
+                  style={{
+                    borderColor: selected ? "var(--color-accent)" : "var(--color-border)",
+                    background: selected ? "var(--color-accent)" : "transparent",
+                    color: selected ? "#fff" : "var(--color-text-muted)",
+                  }}
+                >
+                  {letter}
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className="block text-[13px] font-medium leading-5"
+                    style={{ color: "var(--color-text)" }}
+                  >
+                    {option.label}
+                  </span>
+                  {option.description && (
+                    <span
+                      className="mt-0.5 block text-[12px] leading-relaxed"
+                      style={{ color: "var(--color-text-muted)" }}
+                    >
+                      {option.description}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {!showDetails && !submitted && (
+          <button
+            type="button"
+            onClick={() => setDetailsOpen(true)}
+            className="mt-2 text-[12px] font-medium"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            Add details
+          </button>
+        )}
+
+        {showDetails && (
+          <label className="mt-2 block">
+            <span
+              className="sr-only"
+            >
+              Optional context
+            </span>
+            <textarea
+              value={details}
+              disabled={!!submitted}
+              onChange={(event) => setDetails(event.target.value)}
+              placeholder={question.optionalDetailsPlaceholder ?? "Add optional details..."}
+              className="min-h-[56px] w-full resize-y rounded-lg border px-2.5 py-2 text-[13px] leading-relaxed outline-none transition-[border-color,box-shadow] disabled:opacity-70"
+              style={{
+                borderColor: "var(--color-border)",
+                background: "var(--color-background)",
+                color: "var(--color-text)",
+              }}
+              onFocus={(event) => {
+                event.currentTarget.style.borderColor = "var(--color-accent)";
+                event.currentTarget.style.boxShadow =
+                  "0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent)";
+              }}
+              onBlur={(event) => {
+                event.currentTarget.style.borderColor = "var(--color-border)";
+                event.currentTarget.style.boxShadow = "none";
+              }}
+            />
+          </label>
+        )}
+
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <div className="min-h-5 text-[12px]" style={{ color: "var(--color-text-muted)" }}>
+            {submitted === "answered" && "Answer sent"}
+            {submitted === "skipped" && "Skipped"}
             {!submitted && selectedOptions.length > 0 &&
               `${selectedOptions.length} selected`}
           </div>
@@ -189,11 +224,10 @@ export function ChatQuestionCard({ question, onAnswer }: ChatQuestionCardProps) 
                 type="button"
                 disabled={!!submitted}
                 onClick={skipQuestion}
-                className="h-9 rounded-lg px-3 text-[13px] font-medium transition-opacity disabled:opacity-50"
+                className="h-7 rounded-md px-2 text-[12px] font-medium transition-opacity disabled:opacity-50"
                 style={{
-                  border: "1px solid var(--color-border)",
                   color: "var(--color-text-muted)",
-                  background: "var(--color-background)",
+                  background: "transparent",
                 }}
               >
                 Skip
@@ -203,7 +237,7 @@ export function ChatQuestionCard({ question, onAnswer }: ChatQuestionCardProps) 
               type="button"
               disabled={!canSubmit}
               onClick={submitAnswer}
-              className="h-9 rounded-lg px-4 text-[13px] font-medium transition-opacity disabled:opacity-50"
+              className="h-7 rounded-md px-3 text-[12px] font-semibold transition-opacity disabled:opacity-50"
               style={{
                 background: "var(--color-accent)",
                 color: "#fff",
@@ -216,6 +250,30 @@ export function ChatQuestionCard({ question, onAnswer }: ChatQuestionCardProps) 
       </div>
     </section>
   );
+}
+
+function QuestionIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+      <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 2.75" />
+      <path d="M12 16h.01" />
+    </svg>
+  );
+}
+
+function isCustomOption(option: QuestionOption): boolean {
+  const text = `${option.id} ${option.label}`.toLowerCase();
+  return /\b(custom|other|specify|something-else)\b/.test(text);
 }
 
 function formatQuestionAnswer(

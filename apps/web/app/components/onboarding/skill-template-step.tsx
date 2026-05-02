@@ -8,6 +8,7 @@ import {
   isSkillTemplateId,
   type SkillTemplateId,
 } from "@/lib/skill-templates";
+import { readOnboardingResponse } from "./response";
 
 function initialTemplateId(state: OnboardingState): SkillTemplateId {
   const persisted = state.skillTemplate?.templateId;
@@ -40,11 +41,7 @@ export function SkillTemplateStep({
           skillTemplate: { templateId: selectedId },
         }),
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const next = (await res.json()) as OnboardingState;
+      const next = await readOnboardingResponse<OnboardingState>(res);
       onAdvance(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save template choice.");

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OnboardingState } from "@/lib/denchclaw-state";
 import { ConnectionCard, type ConnectionStatus } from "./connection-card";
+import { readOnboardingResponse } from "./response";
 
 type DenchCloudStatus = {
   configured: boolean;
@@ -333,11 +334,7 @@ export function SetupStep({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ acceptCli: true }),
         });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data.error ?? `HTTP ${res.status}`);
-        }
-        const next = (await res.json()) as OnboardingState;
+        const next = await readOnboardingResponse<OnboardingState>(res);
         onAdvance(next);
       } catch (err) {
         setDenchCloudError(
@@ -382,11 +379,7 @@ export function SetupStep({
             ...(shouldAdvance ? { fromStep, toStep } : {}),
           }),
         });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data.error ?? `HTTP ${res.status}`);
-        }
-        const next = (await res.json()) as OnboardingState;
+        const next = await readOnboardingResponse<OnboardingState>(res);
         onAdvance(next);
         return next;
       } catch (err) {
@@ -610,11 +603,7 @@ export function SetupStep({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey: trimmed }),
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const next = (await res.json()) as OnboardingState;
+      const next = await readOnboardingResponse<OnboardingState>(res);
       onAdvance(next);
       setShowKeyForm(false);
       setDenchCloudKeyInput("");
@@ -632,11 +621,7 @@ export function SetupStep({
     setDenchCloudError(null);
     try {
       const res = await fetch("/api/onboarding/dench-cloud", { method: "DELETE" });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const next = (await res.json()) as OnboardingState;
+      const next = await readOnboardingResponse<OnboardingState>(res);
       onAdvance(next);
       setShowKeyForm(false);
     } catch (err) {
@@ -664,11 +649,7 @@ export function SetupStep({
           skipping: "gmail",
         }),
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const next = (await res.json()) as OnboardingState;
+      const next = await readOnboardingResponse<OnboardingState>(res);
       onAdvance(next);
       setSkipGmailDialogOpen(false);
     } catch (err) {
@@ -697,11 +678,7 @@ export function SetupStep({
           skipping: "calendar",
         }),
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const next = (await res.json()) as OnboardingState;
+      const next = await readOnboardingResponse<OnboardingState>(res);
       onAdvance(next);
     } catch (err) {
       setToolkitError(
@@ -778,11 +755,7 @@ export function SetupStep({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ from: "connect-calendar", to: "backfill" }),
         });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(data.error ?? `HTTP ${res.status}`);
-        }
-        const next = (await res.json()) as OnboardingState;
+        const next = await readOnboardingResponse<OnboardingState>(res);
         onAdvance(next);
       } catch (err) {
         setToolkitError(

@@ -31,7 +31,7 @@ describe("skill template consume API", () => {
   it("returns the selected template prompt once and marks it consumed", async () => {
     advanceOnboardingStep("skill-template", "complete", {
       skillTemplate: {
-        templateId: "linkedin-outreach",
+        templateId: "icp-outreach-builder",
         selectedAt: "2026-04-15T00:00:00.000Z",
       },
     });
@@ -39,8 +39,8 @@ describe("skill template consume API", () => {
     const first = await POST();
     expect(first.status).toBe(200);
     const firstJson = (await first.json()) as { prompt: string | null; templateId?: string };
-    expect(firstJson.templateId).toBe("linkedin-outreach");
-    expect(firstJson.prompt).toContain("LinkedIn outreach");
+    expect(firstJson.templateId).toBe("icp-outreach-builder");
+    expect(firstJson.prompt).toContain("ICP Outreach Builder");
     expect(readOnboardingState().skillTemplate?.promptConsumedAt).toBeTruthy();
 
     const second = await POST();
@@ -52,7 +52,7 @@ describe("skill template consume API", () => {
       ...readOnboardingState(),
       currentStep: "skill-template",
       skillTemplate: {
-        templateId: "linkedin-outreach",
+        templateId: "icp-outreach-builder",
         selectedAt: "2026-04-15T00:00:00.000Z",
       },
     });

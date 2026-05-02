@@ -66,7 +66,7 @@ describe("readOnboardingState", () => {
       completedSteps: ["welcome"],
       identity: { name: "Sarah", email: "sarah@acme.com", capturedAt: new Date().toISOString() },
       skillTemplate: {
-        templateId: "linkedin-outreach",
+        templateId: "icp-outreach-builder",
         selectedAt: "2026-04-15T00:00:00Z",
       },
     };
@@ -76,7 +76,7 @@ describe("readOnboardingState", () => {
     expect(loaded.currentStep).toBe("identity");
     expect(loaded.completedSteps).toEqual(["welcome"]);
     expect(loaded.identity?.email).toBe("sarah@acme.com");
-    expect(loaded.skillTemplate?.templateId).toBe("linkedin-outreach");
+    expect(loaded.skillTemplate?.templateId).toBe("icp-outreach-builder");
   });
 });
 

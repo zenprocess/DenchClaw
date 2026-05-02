@@ -40,16 +40,16 @@ describe("onboarding state API", () => {
     const res = await PUT(makeRequest({
       from: "skill-template",
       to: "complete",
-      skillTemplate: { templateId: "linkedin-outreach" },
+      skillTemplate: { templateId: "icp-outreach-builder" },
     }));
 
     expect(res.status).toBe(200);
     const json = (await res.json()) as OnboardingState;
     expect(json.currentStep).toBe("complete");
     expect(json.completedSteps).toContain("skill-template");
-    expect(json.skillTemplate?.templateId).toBe("linkedin-outreach");
+    expect(json.skillTemplate?.templateId).toBe("icp-outreach-builder");
     expect(json.skillTemplate?.selectedAt).toBeTruthy();
-    expect(readOnboardingState().skillTemplate?.templateId).toBe("linkedin-outreach");
+    expect(readOnboardingState().skillTemplate?.templateId).toBe("icp-outreach-builder");
   });
 
   it("rejects unknown skill template ids", async () => {
@@ -68,7 +68,7 @@ describe("onboarding state API", () => {
     const res = await PUT(makeRequest({
       from: "backfill",
       to: "skill-template",
-      skillTemplate: { templateId: "linkedin-outreach" },
+      skillTemplate: { templateId: "icp-outreach-builder" },
     }));
 
     expect(res.status).toBe(400);

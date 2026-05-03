@@ -81,4 +81,10 @@ export const duplicateRecordCleaner = defineSkillTemplate({
     "Never overwrite user-authored fields during automatic cleanup unless the canonical and overwrite policies explicitly permit it.",
     "Produce an audit summary with clusters reviewed, safe merges completed, conflicts blocked, and records requiring manual review.",
   ],
+  activityLogInstructions: [
+    "Write duplicate-cleanup entries to the configured audit destination and canonical CRM record note for every reviewed duplicate cluster.",
+    "Log cluster IDs, match signals, canonical recommendation, confidence, conflicting fields, approvals, merge/update action, and original record IDs preserved.",
+    "For blocked or review-needed clusters, record the exact reason: below threshold, field conflict, ownership ambiguity, user-authored overwrite risk, or external sync concern.",
+    "For scheduled hygiene runs, append only new duplicate clusters, completed safe merges, changed confidence, and previously reported clusters that were resolved or dismissed.",
+  ],
 });

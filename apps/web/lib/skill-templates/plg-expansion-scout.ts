@@ -69,4 +69,10 @@ export const plgExpansionScout = defineSkillTemplate({
     "Separate expansion opportunity from renewal risk so owners can decide whether to sell, nurture, or protect the relationship.",
     "For scheduled runs, suppress unchanged signals and resurface only when the signal crosses a new threshold or owner action becomes due.",
   ],
+  activityLogInstructions: [
+    "Append PLG expansion entries to the customer account note or expansion-signal digest, keyed by account, workspace segment, and signal window.",
+    "Log usage source, account mapping confidence, signal threshold crossed, behavior changed, expansion versus renewal-risk classification, owner play, and draft/task created.",
+    "Capture suppressed signals with reason: below noise floor, uncertain account mapping, unchanged threshold, relationship guardrail, or owner hold.",
+    "For scheduled runs, append only new threshold crossings, materially changed usage, owner actions due, and expansion signals resolved or dismissed.",
+  ],
 });

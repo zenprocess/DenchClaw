@@ -68,4 +68,10 @@ export const icpOutreachBuilder = defineSkillTemplate({
     "For scheduled runs, make each campaign idempotent by checking prior Dench runs, Gmail history, and CRM notes before creating new drafts or sends.",
     "Create the final SKILL.md with manual invocation examples, an exact scheduled message if enabled, CRM write fields, send policy, and a run summary format.",
   ],
+  activityLogInstructions: [
+    "Write campaign activity entries to the CRM lead/account note or campaign run summary, grouped by ICP segment and send policy.",
+    "Log accounts and contacts researched, personalization evidence used, draft IDs created, sends attempted, caps or quiet-hour blocks, and CRM statuses touched.",
+    "For each prospect, capture fit rationale, source links, message variant, approval state, next follow-up date, and stop condition if skipped or paused.",
+    "For scheduled campaigns, log dedupe checks against prior runs, Gmail history, CRM notes, and only net-new drafts, sends, replies, or conversions.",
+  ],
 });

@@ -77,4 +77,10 @@ export const talentPipelineHygiene = defineSkillTemplate({
     "Prioritize issues by candidate impact, hiring urgency, process risk, and age of inactivity.",
     "For cron audits, report changes since the previous run and avoid repeatedly flagging acknowledged issues unless they become more urgent.",
   ],
+  activityLogInstructions: [
+    "Append talent-pipeline hygiene entries to the candidate CRM note, issue table, or recruiter digest for the audited pipeline.",
+    "Log pipeline scope, hygiene checks run, candidate records scanned, issues found, owners assigned, severity, evidence links, and tasks or notes created.",
+    "Record privacy and compliance safeguards, including protected-class exclusions, candidate-detail minimization, acknowledged issues, and writes blocked for review.",
+    "For cron audits, append only new issues, worsened stale age, resolved blockers, acknowledged suppressions, and repeated issues that became more urgent.",
+  ],
 });

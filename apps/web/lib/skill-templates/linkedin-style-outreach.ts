@@ -75,4 +75,10 @@ export const linkedinStyleOutreach = defineSkillTemplate({
     "For scheduled runs, use idempotency checks against CRM notes, prior Dench runs, and connected app history so the same prospect is not messaged twice for the same campaign.",
     "Stop outreach when a reply, accepted connection plus response, meeting booked, disqualifying CRM stage, do-not-contact flag, blocked signal, or owner override is detected.",
   ],
+  activityLogInstructions: [
+    "Log outreach-state entries on the CRM/contact record or social outreach campaign summary, never only inside the message draft.",
+    "Record audience source, prospect researched, public/CRM evidence used, message variant, draft/send state, send policy gate, and next follow-up date.",
+    "For each skipped prospect, log the concrete reason: duplicate campaign touch, cap, quiet hours, missing evidence, do-not-contact, reply, booked meeting, or owner override.",
+    "For scheduled sequences, append only state transitions such as new draft, sent message, accepted/replied, stopped, or follow-up due.",
+  ],
 });

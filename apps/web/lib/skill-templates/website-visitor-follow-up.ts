@@ -77,4 +77,10 @@ export const websiteVisitorFollowUp = defineSkillTemplate({
     "Respect send guardrails, quiet hours, duplicate checks, owner approval, and do-not-contact exclusions before creating or sending any message.",
     "Log visitor evidence, match confidence, recommended action, and any drafts or tasks additively in CRM with source attribution.",
   ],
+  activityLogInstructions: [
+    "Write visitor follow-up entries to the matched CRM account/contact note or visitor-intent run summary, tied to the uploaded/exported source.",
+    "Log import source, visit window, matching method, intent pages or behaviors, match confidence, hot accounts created, and records skipped for weak identity.",
+    "For each follow-up action, capture account-level evidence, buyer researched, draft or task ID, approval/send state, cooldown or do-not-contact block, and next eligible date.",
+    "For scheduled exports, append only new visits, changed intent scores, newly matched accounts, and stopped or suppressed follow-ups since the previous export.",
+  ],
 });

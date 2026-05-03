@@ -85,4 +85,10 @@ export const investorMeetingPrep = defineSkillTemplate({
     "Default to read-only prep; if writing notes, use additive CRM or Notion entries with source attribution and no overwrites.",
     "For scheduled runs, skip events already briefed unless attendee, CRM, Gmail, or Notion context materially changed.",
   ],
+  activityLogInstructions: [
+    "Append investor-prep entries to the meeting brief, investor CRM record, or Notion prep page linked to the calendar event.",
+    "Log investor/firm researched, meeting goal, source-of-truth docs used, investor facts cited, metrics included, objections generated, and notes written.",
+    "Record missing or unsupported fundraising claims, private founder-only notes withheld, and any follow-up ask that needs founder review.",
+    "For scheduled prep, append only newly briefed meetings, material context changes, missing metric blockers, and skipped events already briefed.",
+  ],
 });

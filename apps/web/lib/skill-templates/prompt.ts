@@ -97,6 +97,9 @@ Ask the questions in that order unless my answer makes a later question unnecess
 When you have enough context, create a complete SKILL.md for this reusable skill. Do not assume a skill-creator helper exists; if no helper is available, create the skill directly at skills/<kebab-case-skill-name>/SKILL.md and add references under that folder when useful. The skill should include:
 ${bulletList(template.skillInstructions)}
 
+The final SKILL.md must include a concrete activity logger policy. Do not add a generic "log activity" note; specify where the log lives, when entries are appended, which fields are recorded, what gets suppressed on repeat runs, and what must be redacted. Use this tailored logger contract:
+${bulletList(template.activityLogInstructions)}
+
 Automation policy:
 - If the skill sends email or LinkedIn-style outreach, it may be fully automated only after you define explicit send rules with me.
 - Capture daily or weekly caps, allowlists or exclusions, quiet hours, stop conditions, duplicate prevention, and what counts as a reply or conversion.

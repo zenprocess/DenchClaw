@@ -80,4 +80,10 @@ export const pipelineHygieneDigest = defineSkillTemplate({
     "Make scheduled digests idempotent by suppressing unchanged findings already reported within the configured window.",
     "Deliver a concise digest with executive summary, owner sections, top risks, blocked writes, and low-confidence findings.",
   ],
+  activityLogInstructions: [
+    "Append pipeline hygiene entries to the digest history and any CRM records where safe notes or tasks are created.",
+    "Log pipeline scope, hygiene checks run, records scanned, issue severity, affected fields, recommended fixes, writes/tasks created, and blocked write reasons.",
+    "For each finding, record owner, evidence, stale threshold, confidence, whether it was new, repeated, acknowledged, resolved, or suppressed.",
+    "For scheduled digests, log only new findings, worsened severity, resolved issues, created tasks, and unchanged findings suppressed within the configured reporting window.",
+  ],
 });

@@ -82,4 +82,10 @@ export const boardMeetingPrep = defineSkillTemplate({
     "Alert owners for missing metrics, unresolved prior board commitments, unclear decision owners, or customer/revenue risks that need executive input before the meeting.",
     "Use a board-ready tone: clear, candid, numbers-aware, and explicit about decisions, tradeoffs, risks, and asks.",
   ],
+  activityLogInstructions: [
+    "Append board-prep entries to the packet checklist or board prep document, keyed by meeting date, packet version, and audience version.",
+    "Log sources checked, sections assembled, metrics included or missing, prior commitments reviewed, owner alerts, private-versus-board-safe outputs, and writebacks.",
+    "For each missing metric, unresolved commitment, or risk, record owner, source expected, decision needed, sensitivity level, and whether it is board-safe or founder-private.",
+    "For scheduled prep, append only packet version changes, resolved blockers, new risks, owner tasks created, and repeated gaps that still need executive attention.",
+  ],
 });

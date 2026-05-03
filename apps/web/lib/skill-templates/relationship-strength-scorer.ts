@@ -82,4 +82,10 @@ export const relationshipStrengthScorer = defineSkillTemplate({
     "For weak or stale high-value relationships, create only the configured next action type and include the manual invocation or cron schedule that produced it.",
     "Report score changes, blocked overwrites, low-confidence records, and recommended follow-ups after every run.",
   ],
+  activityLogInstructions: [
+    "Append relationship-score entries to each touched contact/account note and a run-level score-change summary.",
+    "Log scoring scope, sources checked, old score, proposed or written score, calculation timestamp, evidence factors, confidence, and protected-field decision.",
+    "For weak or stale relationships, record the next action created or recommended, owner, due date, and why the relationship needs attention.",
+    "For scheduled scoring, append only score changes, newly stale high-value records, blocked overwrites, low-confidence proposals, and resolved follow-up recommendations.",
+  ],
 });

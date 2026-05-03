@@ -79,4 +79,10 @@ export const companyDeepResearcher = defineSkillTemplate({
     "Structure the brief around the user's decision with executive summary, evidence-backed sections, risks or unknowns, recommendations, and sources.",
     "Keep private CRM, email, Slack, and file excerpts scoped to the requested business purpose and visible audience.",
   ],
+  activityLogInstructions: [
+    "Append research activity entries to the company dossier or Dench note, keyed by company, research goal, and brief version.",
+    "Log source sets checked, material claims added, conflicts found, unresolved fields, private context included or withheld, and output destination.",
+    "For each recommendation or risk, record supporting sources, confidence, decision relevance, and open questions that still need human follow-up.",
+    "On reruns, log only new sources, changed facts, resolved conflicts, updated recommendations, and sections removed because evidence no longer supports them.",
+  ],
 });

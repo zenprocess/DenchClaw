@@ -71,4 +71,10 @@ export const conferenceLeadResearcher = defineSkillTemplate({
     "Highlight warm paths such as existing contacts, CRM notes, shared accounts, prior interactions, or scheduled meetings.",
     "Return a conference-ready lead list with meeting rationale, conversation starters, recommended outreach timing, and source evidence.",
   ],
+  activityLogInstructions: [
+    "Append event-research entries to the conference lead list, event brief, or CRM campaign note for the named event.",
+    "Log event source pages/files, participant types scanned, companies and people added, lead-fit criteria, warm paths found, and exclusions applied.",
+    "For each prioritized lead, record participant role, CRM status, evidence links, meeting rationale, conversation starter, recommended timing, and owner action.",
+    "When rerun after the event, log newly found participants, changed priority, post-event follow-up status, and leads suppressed because they were already handled.",
+  ],
 });

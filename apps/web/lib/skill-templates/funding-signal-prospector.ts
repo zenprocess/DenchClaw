@@ -79,4 +79,10 @@ export const fundingSignalProspector = defineSkillTemplate({
     "Write only additive CRM notes, scores, tasks, or drafts with source attribution and confidence; do not overwrite user-authored fields.",
     "For scheduled runs, suppress funding events already processed in earlier runs unless a materially new signal appears.",
   ],
+  activityLogInstructions: [
+    "Log funding-signal entries in the CRM account note or funding prospect digest keyed by company, funding event, and freshness window.",
+    "Record funding source, stage, amount when verified, date, investors, ICP filters applied, spend-trigger rationale, and accounts excluded or deduped.",
+    "For each qualified prospect, capture CRM writes or drafts created, source URLs, confidence, owner task, next action, and skipped reason if no action was taken.",
+    "For scheduled runs, append only net-new funding events, materially updated verification, changed urgency, and duplicate events suppressed from earlier runs.",
+  ],
 });

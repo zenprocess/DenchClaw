@@ -77,4 +77,10 @@ export const hiringManagerWeeklyDigest = defineSkillTemplate({
     "For weekly cron digests, compare against the prior week and highlight stage movement, newly stale candidates, and resolved blockers.",
     "Format the digest as executive summary, pipeline snapshot, priority decisions, overdue feedback, upcoming interviews, blockers, and recommended actions.",
   ],
+  activityLogInstructions: [
+    "Append hiring-manager digest entries to the digest history or private recruiting ops page for the covered role/manager/week.",
+    "Log source systems checked, pipeline snapshot counts, stage movement, overdue feedback, upcoming interviews, blockers, priority decisions, and delivery destination.",
+    "Record candidate-detail privacy level, protected-class exclusions, private links used, and any candidate information withheld from the manager-facing digest.",
+    "For weekly cron digests, append only week-over-week changes, newly stale candidates, resolved blockers, delivery failures, and decisions still awaiting the manager.",
+  ],
 });

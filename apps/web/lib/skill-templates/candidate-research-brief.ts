@@ -72,4 +72,10 @@ export const candidateResearchBrief = defineSkillTemplate({
     "Prefer primary candidate materials, work samples, public professional profiles, and authorized internal notes over low-quality web results.",
     "Format the output as Candidate Snapshot, Role-Relevant Evidence, Fit Hypotheses, Risks/Unknowns, Suggested Interview Questions, Outreach Hooks if requested, and Sources.",
   ],
+  activityLogInstructions: [
+    "Append candidate-brief activity entries to the candidate record or brief artifact, keyed by candidate, role, and brief purpose.",
+    "Log allowed sources checked, role criteria used, evidence included, hypotheses created, risks or unknowns flagged, outreach hooks generated, and output destination.",
+    "Record privacy safeguards applied, including protected-class exclusions, sensitive data withheld, source-access limits, and claims rejected as not role-relevant.",
+    "On reruns, log only changed candidate evidence, updated fit hypotheses, newly available sources, and brief sections removed for privacy or weak evidence.",
+  ],
 });

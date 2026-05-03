@@ -80,4 +80,10 @@ export const fundraisingTargetBuilder = defineSkillTemplate({
     "Alert the founder when a high-fit investor has a strong warm path, recent relevant activity, or a time-sensitive reason to engage.",
     "Produce a founder-ranked shortlist, operator CRM write plan, intro-request drafts, and investor-specific research memos.",
   ],
+  activityLogInstructions: [
+    "Append fundraising-target entries to the investor CRM record, target-list artifact, or fundraising run summary.",
+    "Log round context, investor fit criteria, sources checked, investors added or deduped, warm paths found, fit score, CRM writes/tasks, and intro drafts.",
+    "For each investor, record stage/sector/check-size fit, portfolio conflict checks, warm-path evidence, owner, next action, approval state, and skipped reason if excluded.",
+    "For scheduled refreshes, append only new investors, changed fit or warm-path strength, time-sensitive alerts, created task IDs, and duplicate or dismissed targets suppressed.",
+  ],
 });

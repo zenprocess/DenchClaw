@@ -50,6 +50,12 @@ const categoryValidatedInstructions: Record<SkillTemplateCategory, readonly stri
   ],
 };
 
+const sharedActivityLogInstructions = [
+  "Use timestamped activity log entries that name the trigger source, run window, records or artifacts touched, evidence used, decisions made, and next owner action.",
+  "For scheduled runs, log what changed since the prior run and suppress unchanged findings instead of repeating the same entry.",
+  "Keep logs privacy-safe: include enough evidence for auditability, but omit sensitive message bodies, protected-class data, and unsupported guesses.",
+] as const;
+
 const categorySuggestedApps: Record<SkillTemplateCategory, readonly SkillTemplateApp[]> = {
   "Find Leads": [
     externalApps.gmail,
@@ -127,6 +133,10 @@ export function defineSkillTemplate(
       ...template.skillInstructions,
       ...customerValidatedInstructions,
       ...categoryValidatedInstructions[template.category],
+    ],
+    activityLogInstructions: [
+      ...template.activityLogInstructions,
+      ...sharedActivityLogInstructions,
     ],
   };
 }

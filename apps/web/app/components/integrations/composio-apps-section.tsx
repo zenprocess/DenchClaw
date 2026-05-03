@@ -20,6 +20,7 @@ import {
   denchIntegrationsBrand,
   formatDenchIntegrationsStatusError,
 } from "@/lib/dench-integrations-brand";
+import { readJsonByStatus } from "@/lib/http-response";
 
 const FEATURED_SLUGS = [
   "gmail",
@@ -214,14 +215,16 @@ export function ComposioAppsSection({
     if (params?.limit) query.set("limit", String(params.limit));
     const suffix = query.toString();
     const response = await fetch(`/api/composio/toolkits${suffix ? `?${suffix}` : ""}`);
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    const result = await readJsonByStatus<ComposioToolkitsResponse, { error?: string }>(
+      response,
+      {},
+    );
+    if (!result.ok) {
       throw new Error(
-        payload.error ?? `Failed to load apps (${response.status})`,
+        result.data.error ?? `Failed to load apps (${response.status})`,
       );
     }
-    const payload = (await response.json()) as ComposioToolkitsResponse;
-    return extractComposioToolkits(payload);
+    return extractComposioToolkits(result.data);
   }, []);
 
   const fetchMcpStatus = useCallback(async (

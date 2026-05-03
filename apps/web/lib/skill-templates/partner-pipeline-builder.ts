@@ -86,4 +86,10 @@ export const partnerPipelineBuilder = defineSkillTemplate({
     "Produce audience-specific outputs: founder strategic shortlist, BD owner action queue, CRM import or update plan, and partner-facing brief or intro draft.",
     "Use a founder-ops tone: pragmatic, commercially grounded, concise, and skeptical of partnerships without a clear next step or measurable upside.",
   ],
+  activityLogInstructions: [
+    "Append partner-pipeline entries to the partner CRM record, BD action queue, or partner-run summary.",
+    "Log partner type, mutual-value criteria, companies researched, relationship paths found, fit score, CRM records/notes/tasks created, and owner alerts.",
+    "For each partner candidate, record source evidence, warm path, overlapping customer signal, next step, confidence, approval state, and skipped reason if no action was taken.",
+    "For scheduled refreshes, append only new partner candidates, changed mutual-value score, newly available warm paths, created tasks, and dismissed or duplicate targets suppressed.",
+  ],
 });

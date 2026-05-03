@@ -78,4 +78,10 @@ export const staleThreadFollowUpAgent = defineSkillTemplate({
     "For scheduled runs, check Gmail, CRM, HubSpot, and prior Dench notes to avoid duplicate nudges and skip threads already handled by a teammate.",
     "Stop when a reply is detected, a meeting is booked, the CRM stage closes or disqualifies, the contact opts out, or the owner marks the thread done.",
   ],
+  activityLogInstructions: [
+    "Append stale-thread entries to the CRM record or follow-up run summary for each reviewed thread, linked to the email thread when available.",
+    "Log stale definition, last unanswered ask, days inactive, business value reason, drafted nudge type, send/draft decision, and owner review state.",
+    "Capture stop and skip reasons including reply detected, meeting booked, stage changed, do-not-contact, teammate handled, low value, or duplicate nudge.",
+    "For scheduled runs, log only new stale threads, worsened inactivity, nudges created or sent, and threads that exited the queue since the previous scan.",
+  ],
 });

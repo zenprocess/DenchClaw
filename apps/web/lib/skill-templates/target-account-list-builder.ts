@@ -73,4 +73,10 @@ export const targetAccountListBuilder = defineSkillTemplate({
     "Write or propose CRM records additively with source attribution, not silent overwrites of user-authored fields.",
     "Return a sales-ready account table with owners, next actions, blocked records, and any low-confidence matches separated for review.",
   ],
+  activityLogInstructions: [
+    "Append account-list run entries to the target-list artifact or connected CRM list document, keyed by ICP, source window, and run timestamp.",
+    "Log search filters used, sources scanned, accounts added or skipped, duplicate and exclusion reasons, fit score changes, and CRM fields written or proposed.",
+    "For each new account record, record source URLs, confidence, owner recommendation, next action, and whether the record was created, updated additively, or held for review.",
+    "For scheduled refreshes, log only new accounts, materially changed scores, newly blocked records, and unresolved low-confidence matches.",
+  ],
 });

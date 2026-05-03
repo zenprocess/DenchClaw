@@ -72,4 +72,10 @@ export const championJobChangeTracker = defineSkillTemplate({
     "Avoid implying private knowledge, sensitive employment details, or pressure around the role change.",
     "For scheduled runs, suppress unchanged champion changes and resurface only when risk, fit, or owner action materially changes.",
   ],
+  activityLogInstructions: [
+    "Append champion-change entries to both the old account record and the champion/contact relationship note, with a separate new-company brief when applicable.",
+    "Log change evidence, confirmation status, old account risk, replacement-champion search, new company fit, draft created, owner routed, and approval state.",
+    "Record skipped or watch-only decisions with reasons such as weak evidence, no renewal exposure, poor new-company fit, sensitive context, or owner hold.",
+    "For scheduled monitoring, log only confirmed changes, risk/fit changes, new owner actions due, and previously surfaced changes that were resolved.",
+  ],
 });

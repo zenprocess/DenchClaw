@@ -76,4 +76,10 @@ export const deckClaimVerifier = defineSkillTemplate({
     "Separate source quality from confidence so users can see when a claim is supported only by weak or promotional sources.",
     "End with the riskiest unsupported claims, recommended follow-up questions, and claims safe to repeat externally.",
   ],
+  activityLogInstructions: [
+    "Append verification entries to the claim table or research report, keyed by deck/file version and verification run timestamp.",
+    "Log claims extracted, slide or section references, source standard used, sources checked, status changes, contradictions found, and out-of-scope claims.",
+    "For each material claim, record original wording, verification label, supporting quote or missing-evidence note, source quality, confidence, and recommended follow-up question.",
+    "On reruns, log only changed claim statuses, new evidence, newly contradicted claims, and claims removed because the source deck changed.",
+  ],
 });

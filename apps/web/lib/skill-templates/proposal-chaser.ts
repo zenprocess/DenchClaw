@@ -78,4 +78,10 @@ export const proposalChaser = defineSkillTemplate({
     "For scheduled runs, compare against Gmail and CRM activity plus prior Dench notes so the same proposal is not chased twice after a reply, meeting, or owner action.",
     "Stop or hand off when a reply is detected, proposal is accepted or rejected, a meeting is booked, deal stage changes, procurement/legal owner takes over, contact opts out, or the user marks the opportunity paused.",
   ],
+  activityLogInstructions: [
+    "Append proposal follow-up entries to the opportunity CRM note or proposal tracker, linked to the proposal file/thread and deal record.",
+    "Log proposal type, sent date, waiting reason, chase timing, draft/send action, forecast update proposed, and owner approval state.",
+    "Capture exact stop or skip reasons such as reply, accepted/rejected proposal, meeting booked, legal/procurement takeover, opt-out, pause, cap, or quiet hours.",
+    "For scheduled runs, log only proposals newly due, follow-ups created or sent, forecast notes changed, and proposals removed from the chase queue.",
+  ],
 });

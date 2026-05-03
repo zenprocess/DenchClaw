@@ -79,4 +79,10 @@ export const crmContactEnricher = defineSkillTemplate({
     "Make scheduled runs idempotent by skipping records enriched successfully within the configured lookback window.",
     "End each run with records scanned, fields updated, conflicts skipped, low-confidence suggestions, and any HubSpot sync issues.",
   ],
+  activityLogInstructions: [
+    "Append enrichment entries to each touched CRM contact/company note and a run-level enrichment summary.",
+    "Log records scanned, fields missing, values proposed or written, source attribution, observed date, confidence, overwrite policy decision, and HubSpot sync result.",
+    "For conflicts, record before/after candidate values, protected user-authored field status, reviewer needed, and why the write was blocked or allowed.",
+    "For scheduled enrichment, log skipped records from the lookback window, newly enriched fields, unresolved low-confidence suggestions, and sync errors requiring owner attention.",
+  ],
 });

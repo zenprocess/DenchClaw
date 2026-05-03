@@ -71,4 +71,10 @@ export const recruitingOutreachBuilder = defineSkillTemplate({
     "For scheduled runs, generate outreach only for approved candidate records and skip anyone contacted recently or missing enough evidence.",
     "Log draft/send status, evidence sources, next follow-up date, and stop conditions back to candidate records.",
   ],
+  activityLogInstructions: [
+    "Write recruiting outreach entries to candidate records and the sourcing campaign summary, keyed by role, segment, and outreach channel.",
+    "Log candidate source, role criteria, personalization evidence, draft variant, send/approval state, next follow-up date, and candidate record fields touched.",
+    "Record privacy safeguards and skip reasons such as protected-class risk, insufficient job-relevant evidence, recent contact, do-not-contact, cap, quiet hours, or owner review required.",
+    "For scheduled outreach, append only newly approved candidates, drafts/sends created, follow-up state changes, replies, stops, and candidates suppressed from the campaign.",
+  ],
 });

@@ -85,4 +85,10 @@ export const executiveDailyBrief = defineSkillTemplate({
     "Deliver one scannable brief with top priorities, meetings, prep needs, follow-ups, and risks in the configured destination.",
     "Make scheduled runs idempotent by generating at most one brief per recipient per scheduled window unless manually invoked.",
   ],
+  activityLogInstructions: [
+    "Append daily brief entries to the brief history artifact or destination thread, keyed by recipient, date, and scheduled window.",
+    "Log sources checked, priority rules applied, meetings included, follow-ups surfaced, risks called out, delivery destination, and skipped quiet-day decision.",
+    "Record any suggested actions separately from actual writes, including owner, source evidence, confidence, and whether the item is waiting on the user.",
+    "For scheduled briefs, append only one entry per recipient/window and log deltas from the prior brief: new urgent items, cleared risks, and delivery failures.",
+  ],
 });

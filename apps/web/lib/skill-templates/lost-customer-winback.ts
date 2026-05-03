@@ -78,4 +78,10 @@ export const lostCustomerWinback = defineSkillTemplate({
     "Alert the configured owner with the account, reactivation reason, risk caveats, and suggested next step before any customer-facing send unless explicit send rules allow automation.",
     "Return audience-specific outputs: owner action briefs, founder-level pipeline impact summary, CRM-safe notes, and customer-facing drafts.",
   ],
+  activityLogInstructions: [
+    "Append winback entries to the lost account CRM note and winback run summary, keyed by lifecycle segment and reactivation trigger.",
+    "Log churn/loss context reviewed, reactivation signal, account priority, owner approval, draft/task created, CRM note written, and customer-facing send state.",
+    "Record blocked accounts with reasons such as never-contact, unresolved churn reason, bad fit, missing trigger, relationship risk, cap, quiet hours, or owner review required.",
+    "For scheduled winback, append only newly qualified accounts, changed trigger strength, owner actions due, replies, stops, and accounts suppressed from prior outreach.",
+  ],
 });

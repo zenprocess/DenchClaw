@@ -85,4 +85,10 @@ export const weeklyFounderDigest = defineSkillTemplate({
     "Produce audience-specific versions: private founder memo, leadership-safe summary, board-safe excerpt, and concrete task list with owners and due dates.",
     "Use a founder-ops tone: concise, opinionated, low-drama, commercially grounded, and focused on decisions, leverage, and follow-through.",
   ],
+  activityLogInstructions: [
+    "Append weekly digest entries to the digest history artifact, keyed by covered week, audience version, and source windows.",
+    "Log operating areas scanned, material items included, owners alerted, tasks or notes created, audience versions generated, and source gaps.",
+    "For each urgent item, record source evidence, owner, due date, business impact, whether it needs founder attention, and whether it was new or carried over.",
+    "For scheduled digests, append only week-over-week changes, newly created task IDs, resolved carryovers, skipped quiet-week decisions, and delivery failures.",
+  ],
 });

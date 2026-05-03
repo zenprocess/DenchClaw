@@ -72,4 +72,10 @@ export const lookalikeCustomerFinder = defineSkillTemplate({
     "Return account recommendations with evidence, confidence, source links, CRM status, and suggested prospecting angle.",
     "For scheduled refreshes, report only new or materially improved lookalikes since the prior run and avoid recreating records already written to CRM.",
   ],
+  activityLogInstructions: [
+    "Append lookalike discovery entries to the prospect-list artifact or CRM segment note tied to the seed customer set.",
+    "Log seed customers used, similarity dimensions, excluded companies, discovered accounts, match traits, score changes, and CRM records created or held.",
+    "For each recommended lookalike, record matched seed traits, source links, confidence, CRM status, suggested angle, and owner or next action.",
+    "For scheduled refreshes, log only new lookalikes, materially improved matches, changed exclusions, and duplicate records suppressed from prior runs.",
+  ],
 });

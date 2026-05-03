@@ -79,4 +79,10 @@ export const noShowRecovery = defineSkillTemplate({
     "For scheduled runs, check Calendar, Gmail, and CRM activity before each follow-up so the skill stops once a new meeting is booked, the person replies, the owner intervenes, or the record changes stage.",
     "Log the no-show, message sent or drafted, next retry date, and final outcome in CRM/calendar notes without overwriting existing user-authored context unless explicitly allowed.",
   ],
+  activityLogInstructions: [
+    "Write no-show recovery entries to the CRM record and calendar note for the missed event, linked to the original meeting ID or title/date.",
+    "Log meeting type, attendee/account, no-show evidence, first-touch timing, recovery message draft/send state, booking CTA used, next retry date, and owner.",
+    "Record stop reasons including reply, new meeting booked, owner intervention, stage change, opt-out, max retry reached, or closed/no-response outcome.",
+    "For scheduled scans, append only newly detected no-shows, retry state changes, bookings recovered, and meetings suppressed because they were already processed.",
+  ],
 });

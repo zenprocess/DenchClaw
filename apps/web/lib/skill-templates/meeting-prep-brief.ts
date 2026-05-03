@@ -82,4 +82,10 @@ export const meetingPrepBrief = defineSkillTemplate({
     "Do not write CRM or meeting notes unless configured; when writing, use additive notes with source attribution.",
     "Make scheduled prep idempotent by skipping meetings already briefed unless important context changed.",
   ],
+  activityLogInstructions: [
+    "Append meeting-prep entries to the brief artifact, calendar note, or CRM meeting note for the anchored event.",
+    "Log meeting ID/date, attendees/accounts, sources checked, brief sections generated, sensitive sections hidden, writes performed, and delivery destination.",
+    "Record skipped or not-regenerated meetings with reasons such as already briefed, no important context change, sensitivity policy, or missing source access.",
+    "For scheduled prep, append only newly generated briefs, important context changes, note writes, delivery failures, and meetings removed from the prep queue.",
+  ],
 });

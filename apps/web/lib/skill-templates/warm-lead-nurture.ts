@@ -82,4 +82,10 @@ export const warmLeadNurture = defineSkillTemplate({
     "Detect replies by checking connected inbox or CRM activity during each run; treat substantive replies, booked meetings, stage advancement, opt-outs, and owner pauses as stop or handoff conditions.",
     "Log each touch, rationale, source links, next eligible date, and confidence notes back to CRM without overwriting user-authored fields unless explicitly allowed.",
   ],
+  activityLogInstructions: [
+    "Write nurture activity entries to the CRM lead/contact record and a segment-level nurture digest, keyed by cadence and lead segment.",
+    "Log segment membership, reason the lead is warm, selected touchpoint type, source links, draft/send status, owner approval, cooldown, and next eligible date.",
+    "For each skipped lead, record whether the cause was cooldown, repeated asset, insufficient trigger, reply, booked meeting, opt-out, stage change, or owner pause.",
+    "For scheduled nurture, append only touches created or sent, state transitions, newly eligible leads, and leads removed from nurture since the prior run.",
+  ],
 });

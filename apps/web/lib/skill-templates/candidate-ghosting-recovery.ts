@@ -67,4 +67,10 @@ export const candidateGhostingRecovery = defineSkillTemplate({
     "Route hiring-manager prompts as concise decisions with candidate, stage, aging, blocker, and suggested action.",
     "For scheduled runs, suppress unchanged stalled candidates and resurface only when the SLA worsens or a new owner action is due.",
   ],
+  activityLogInstructions: [
+    "Append ghosting-recovery entries to the candidate record and hiring-owner action queue, keyed by role, stage, and silence threshold.",
+    "Log last candidate touch, expected next step, days silent, recovery action prepared, hiring-manager ping, draft-only approval state, and next review date.",
+    "Record candidate-experience safeguards and skip reasons such as do-not-contact, rejection pending, insufficient context, owner hold, personal-circumstance speculation risk, or unchanged stall.",
+    "For scheduled runs, append only newly stalled candidates, SLA worsening, new owner actions due, drafts created, and candidates removed because they replied or stage changed.",
+  ],
 });

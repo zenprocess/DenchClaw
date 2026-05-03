@@ -85,4 +85,10 @@ export const postMeetingFollowThrough = defineSkillTemplate({
     "If meeting outcomes are ambiguous or below the confidence threshold, produce a review draft instead of writing updates automatically.",
     "Deliver follow-through at the configured timing and destination, and make scheduled runs idempotent by skipping meetings already processed.",
   ],
+  activityLogInstructions: [
+    "Append post-meeting entries to the CRM meeting note, follow-through artifact, or task list linked to the completed calendar event.",
+    "Log meeting date, attendees, notes sources, outcomes extracted, follow-up drafts, CRM notes/tasks/HubSpot updates, confidence, and delivery timing.",
+    "Record ambiguous outcomes and blocked writes with source gaps, protected fields, reviewer needed, and whether a review draft was created instead.",
+    "For scheduled scans, append only newly processed meetings, created actions, follow-ups sent or drafted, and meetings skipped because they were already processed.",
+  ],
 });

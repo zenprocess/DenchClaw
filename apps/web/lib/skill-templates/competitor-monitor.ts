@@ -78,4 +78,10 @@ export const competitorMonitor = defineSkillTemplate({
     "Format output with top changes, why they matter, recommended response, watchlist, and sources.",
     "For scheduled runs, publish only net-new or materially changed findings since the prior run.",
   ],
+  activityLogInstructions: [
+    "Append competitor-monitor entries to the digest history, battlecard, or Slack/Dench destination for the monitored watchlist.",
+    "Log competitors and signals checked, source titles/URLs, observed dates, verified changes, implications drafted, recommendations, and duplicate coverage suppressed.",
+    "For each action recommendation, record confidence, affected sales/CS motion, source quality, owner, and whether it was published or held for review.",
+    "For scheduled monitors, append only net-new changes, material updates to prior findings, no-signal runs, and watchlist or source failures.",
+  ],
 });

@@ -88,4 +88,10 @@ export const investorUpdateBuilder = defineSkillTemplate({
     "For scheduled preparation, key drafts, source windows, logged updates, and follow-up tasks to the update period so repeated runs update the same artifact instead of creating duplicates.",
     "Use a founder voice that is clear, candid, optimistic without hype, specific about asks, and honest about risks and unknowns.",
   ],
+  activityLogInstructions: [
+    "Append investor-update entries to the update draft history and investor CRM note when logging is approved, keyed by update period and audience version.",
+    "Log sources checked, metrics included or missing, customer proof points, risks, asks, audience versions created, follow-up tasks, and send approval state.",
+    "Record sensitive founder-only notes withheld, unsupported claims removed, vague asks flagged, investor-specific follow-ups separated, and CRM writes blocked or completed.",
+    "For scheduled preparation, append only changes to the same update artifact, newly resolved metrics, new follow-up tasks, and repeated missing inputs still blocking send-ready status.",
+  ],
 });

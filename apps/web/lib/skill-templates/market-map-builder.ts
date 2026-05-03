@@ -80,4 +80,10 @@ export const marketMapBuilder = defineSkillTemplate({
     "Deliver Market Definition, Category Taxonomy, Company Table, Segment Insights, Whitespace, Risks/Unknowns, and Sources.",
     "If saving to CRM or Notion, write additive records with source attribution and avoid overwriting user-authored notes.",
   ],
+  activityLogInstructions: [
+    "Append market-map entries to the research brief, Notion database, or CRM list artifact, keyed by market scope and map version.",
+    "Log market boundaries, source sets, companies added or excluded, category assignments, ambiguous classifications, confidence changes, and records written.",
+    "For each saved company or segment, record source attribution, material attributes, inferred fields, fit confidence, overwrite decisions, and next strategic action.",
+    "On reruns, append only newly discovered companies, changed categories, resolved ambiguities, source updates, and records suppressed as duplicates or out of scope.",
+  ],
 });

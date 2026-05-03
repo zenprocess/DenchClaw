@@ -78,4 +78,10 @@ export const customerVoiceMiner = defineSkillTemplate({
     "Prioritize recent, direct, high-context sources such as call transcripts, customer emails, CRM notes, support notes, and uploaded research files.",
     "Format the output as Summary, Theme Table, Representative Quotes, Segment Differences, Recommendations, Open Questions, and Sources.",
   ],
+  activityLogInstructions: [
+    "Append customer-voice entries to the research report, theme table, or recurring digest history for the analyzed segment.",
+    "Log source material scanned, date range, customer segment, themes extracted, quotes included or redacted, frequency counts, and recommendations generated.",
+    "For each theme, record representative source references, account/segment context, confidence, sample-size caveat, and privacy redactions applied.",
+    "For recurring digests, append only new themes, material frequency shifts, newly resolved open questions, and source-access or privacy blockers.",
+  ],
 });

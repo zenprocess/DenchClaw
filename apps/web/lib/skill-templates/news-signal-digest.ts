@@ -80,4 +80,10 @@ export const newsSignalDigest = defineSkillTemplate({
     "Separate factual news from inferred implications and label confidence for every recommendation.",
     "For scheduled digests, include only new or materially updated items since the prior run and say when no meaningful signal was found.",
   ],
+  activityLogInstructions: [
+    "Append news-digest entries to the digest history or publishing destination, keyed by topic scope, cadence, and source window.",
+    "Log topics/accounts watched, query terms or CRM segments used, sources checked, included items, duplicate/stale/spam items suppressed, and source-quality labels.",
+    "For each included signal, record publication date, retrieval date, source URL, factual summary, inferred implication, confidence, and recommended action.",
+    "For scheduled digests, log no-signal runs, new or materially updated items, items removed as unsupported, and delivery destination or failure.",
+  ],
 });

@@ -116,6 +116,7 @@ export type SkillTemplate = {
   autonomy: SkillTemplateAutonomy;
   interviewQuestions: readonly SkillTemplateInterviewQuestion[];
   skillInstructions: readonly string[];
+  activityLogInstructions: readonly string[];
   buildPrompt: () => string;
 };
 

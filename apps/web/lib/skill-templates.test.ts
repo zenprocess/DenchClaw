@@ -57,6 +57,11 @@ describe("skill templates", () => {
     expect(prompt).toContain("[Connect HubSpot](dench://composio/connect?toolkit=hubspot&name=HubSpot)");
     expect(prompt).toContain("[Connect LinkedIn](dench://composio/connect?toolkit=linkedin&name=LinkedIn)");
     expect(prompt).toContain("not required to start the interview");
+    expect(prompt).toContain("concrete activity logger policy");
+    expect(prompt).toContain("Use this tailored logger contract");
+    expect(prompt).toContain("Write campaign activity entries");
+    expect(prompt).toContain("draft IDs created");
+    expect(prompt).toContain("timestamped activity log entries");
   });
 
   it("marks every template with hand-authored UI and prompt metadata", () => {
@@ -106,10 +111,24 @@ describe("skill templates", () => {
         }
       }
       expect(template.skillInstructions.length).toBeGreaterThanOrEqual(6);
+      expect(template.activityLogInstructions.length).toBeGreaterThanOrEqual(6);
+      const activityLogText = template.activityLogInstructions.join("\n");
+      expect(activityLogText).toMatch(
+        /\b(record|records|artifact|document|note|digest|summary|history|table|queue)\b/i,
+      );
+      expect(activityLogText).toMatch(
+        /\b(source|evidence|confidence|owner|approval|skipped|suppressed|next action|fields|draft|task)\b/i,
+      );
+      expect(activityLogText).toMatch(/\b(scheduled|rerun|refresh|cron|prior run|previous)\b/i);
+      expect(activityLogText).not.toMatch(/\blog activity\b/i);
+      expect(activityLogText).not.toMatch(/\blog everything\b/i);
+      expect(activityLogText).not.toMatch(/\bactivity log goes here\b/i);
+      expect(activityLogText).not.toMatch(/\btbd\b/i);
       const allTemplateText = [
         template.userUseCase,
         ...template.interviewQuestions.map((question) => question.prompt),
         ...template.skillInstructions,
+        ...template.activityLogInstructions,
       ].join("\n");
       expect(allTemplateText).not.toContain("The exact ");
       expect(allTemplateText).not.toContain("for this workflow");

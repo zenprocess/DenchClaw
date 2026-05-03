@@ -86,4 +86,10 @@ export const accountHealthMonitor = defineSkillTemplate({
     "Alert account owners only when thresholds are met, with a short diagnosis, why it matters, the recommended next action, and whether the alert is urgent or informational.",
     "Produce audience-specific outputs: owner action lists, founder-level portfolio summaries, CRM notes, and optional Slack or email digests in a direct founder-ops tone.",
   ],
+  activityLogInstructions: [
+    "Append account-health entries to each touched customer CRM record and a portfolio-level health digest for the run window.",
+    "Log account scope, signals checked, prior health, new health, risk or expansion reason, evidence links, missing-data caveats, alerts, and tasks/notes created.",
+    "For owner alerts, record threshold crossed, urgency, recommended next action, owner, notification destination, and whether the alert is informational or action-required.",
+    "For scheduled checks, append only health changes, new threshold crossings, duplicate alerts suppressed, owner actions due, and risks resolved or dismissed.",
+  ],
 });

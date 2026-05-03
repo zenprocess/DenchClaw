@@ -70,4 +70,10 @@ export const interviewFollowUpAgent = defineSkillTemplate({
     "For scheduled runs, scan only the configured lookback window and skip interviews already followed up, replied to, or marked complete.",
     "Output context checked, recommended action, draft message or reminder, missing inputs, and any CRM/task updates created or proposed.",
   ],
+  activityLogInstructions: [
+    "Append interview follow-up entries to the candidate record or recruiting task history, linked to the interview event and role stage.",
+    "Log context checked, follow-up type, draft or reminder created, status/task update proposed, approval state, due date, and missing inputs.",
+    "Record candidate-privacy safeguards, protected-class exclusions, internal notes withheld from candidate-facing drafts, and reviewer required for sensitive outcomes.",
+    "For scheduled runs, append only newly completed interviews, overdue feedback reminders, candidate updates drafted, and interviews skipped as replied, complete, or already followed up.",
+  ],
 });

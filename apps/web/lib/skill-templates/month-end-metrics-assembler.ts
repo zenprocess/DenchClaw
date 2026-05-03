@@ -73,4 +73,10 @@ export const monthEndMetricsAssembler = defineSkillTemplate({
     "Cite or label the source of every metric so the founder can answer investor or board follow-up questions.",
     "For scheduled runs, update the same period snapshot and track unresolved metric gaps until the founder fills or dismisses them.",
   ],
+  activityLogInstructions: [
+    "Append metrics assembly entries to the monthly snapshot document, keyed by reporting month, audience version, and source window.",
+    "Log metrics requested, source-of-truth map, values verified, values stale or user-provided, deltas calculated, missing metrics, and audience versions created.",
+    "Record every unresolved gap with owner, source expected, last-known value if used, confidence label, and whether the founder was asked or the metric was omitted.",
+    "For scheduled month-end runs, log only changed values, resolved gaps, newly missing metrics, and updates to the same period snapshot rather than duplicate drafts.",
+  ],
 });

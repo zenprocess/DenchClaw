@@ -79,4 +79,10 @@ export const hiringSignalProspector = defineSkillTemplate({
     "Return each prospect with relevant job links, signal interpretation, likely buyer, recommended contact path, and CRM-safe source notes.",
     "For scheduled runs, dedupe against prior findings and only surface new or materially changed hiring signals since the last run.",
   ],
+  activityLogInstructions: [
+    "Append hiring-signal run entries to the CRM account note or hiring-intent prospect digest for the monitored role set.",
+    "Log job sources checked, role/title filters, companies scanned, grouped openings, signal-strength factors, and active opportunities skipped.",
+    "For each surfaced company, record job links, inferred business need, likely buyer, confidence, CRM note/task/draft created, owner, and next action.",
+    "For scheduled runs, log only new postings, materially changed hiring clusters, threshold crossings, and duplicate signals suppressed since the prior run.",
+  ],
 });

@@ -84,4 +84,10 @@ export const renewalRiskDigest = defineSkillTemplate({
     "Produce audience-specific outputs: tactical owner action plan, founder revenue-at-risk summary, CS team digest, and CRM-safe renewal note.",
     "Use a direct, numbers-aware tone that is honest about risk without dramatizing weak signals.",
   ],
+  activityLogInstructions: [
+    "Append renewal-risk entries to the account renewal note and digest history, keyed by account, renewal period, and risk reason.",
+    "Log renewal date, risk signals checked, risk score, champion status, evidence, CRM writes/tasks, owner alert state, and founder/executive support requested.",
+    "Record blocked or review-needed changes for forecast fields, owner-authored risk fields, missing renewal data, weak evidence, or duplicate unresolved tasks.",
+    "For scheduled digests, append only new risks, changed risk levels, approaching deadlines, created owner tasks, resolved risks, and unchanged findings suppressed.",
+  ],
 });

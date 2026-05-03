@@ -81,4 +81,10 @@ export const preCallDiffBrief = defineSkillTemplate({
     "Label sensitive internal context and low-confidence claims according to the configured visibility policy.",
     "For scheduled runs, regenerate only when meaningful context changes or the meeting is inside the delivery window.",
   ],
+  activityLogInstructions: [
+    "Append pre-call diff entries to the meeting brief artifact or calendar-attached note, keyed by meeting ID and delivery window.",
+    "Log last meaningful touch, sources checked, changed facts included, commitments found, risks included or hidden, brief version, and recommended ask.",
+    "Record skipped meetings with reasons such as no meaningful change, outside delivery window, sensitivity policy exclusion, or insufficient source confidence.",
+    "For scheduled prep, append only regenerated briefs, newly changed context, delivery failures, and meetings intentionally suppressed since the previous scan.",
+  ],
 });

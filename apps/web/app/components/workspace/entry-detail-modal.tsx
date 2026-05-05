@@ -508,9 +508,9 @@ export function EntryDetailModal({
           `/api/workspace/objects/${encodeURIComponent(objectName)}/entries/${encodeURIComponent(entryId)}`,
         );
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: "Failed to load" }));
+          const json = await res.json().catch(() => ({ error: "Failed to load" }));
           if (!cancelled) {
-            setError(err.error ?? "Failed to load entry");
+            setError(json.error ?? "Failed to load entry");
             setLoading(false);
           }
           return;

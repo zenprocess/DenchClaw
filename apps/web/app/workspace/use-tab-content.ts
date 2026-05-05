@@ -25,6 +25,7 @@ import { isCodeFile } from "@/lib/report-utils";
 import { isDocxFile, isTxtFile, textToHtml } from "../components/workspace/rich-document-editor";
 import { isSpreadsheetFile } from "../components/workspace/file-viewer";
 import { detectMediaType } from "../components/workspace/media-viewer";
+import { readJsonByStatus } from "@/lib/http-response";
 import {
   fileReadUrl as fileApiUrl,
   rawFileReadUrl as rawFileUrl,
@@ -380,13 +381,16 @@ async function fetchObjectContent(
     | { status: "fatal" }
   > => {
     const res = await fetch(`/api/workspace/objects/${encodeURIComponent(objectName)}`, { signal });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({} as { code?: string }));
-      if (errData.code === "DUCKDB_NOT_INSTALLED") return { status: "duckdb-missing" };
+    const result = await readJsonByStatus<
+      ObjectData,
+      Partial<ObjectData> & { code?: string }
+    >(res, {});
+    if (!result.ok) {
+      if (result.data.code === "DUCKDB_NOT_INSTALLED") return { status: "duckdb-missing" };
       if (res.status === 404 || res.status >= 500) return { status: "retryable" };
       return { status: "fatal" };
     }
-    return { status: "ok", data: await res.json() };
+    return { status: "ok", data: result.data };
   };
 
   let result = await fetchOnce();

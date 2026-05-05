@@ -20,13 +20,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { resolveDenchClawDir } from "./workspace";
-import { SKILL_TEMPLATE_IDS, type SkillTemplateId } from "./skill-templates/types";
-
-function isValidSkillTemplateId(value: unknown): value is SkillTemplateId {
-  return (
-    typeof value === "string" && (SKILL_TEMPLATE_IDS as readonly string[]).includes(value)
-  );
-}
+import { isSkillTemplateId } from "./skill-templates";
+import type { SkillTemplateId } from "./skill-templates/types";
 
 // ---------------------------------------------------------------------------
 // File names
@@ -259,7 +254,7 @@ function sanitizeSkillTemplate(input: unknown): OnboardingSkillTemplate | undefi
   }
   const raw = input as Record<string, unknown>;
   const skillTemplate: OnboardingSkillTemplate = {};
-  if (isValidSkillTemplateId(raw.templateId)) {
+  if (isSkillTemplateId(raw.templateId)) {
     skillTemplate.templateId = raw.templateId;
   }
   if (typeof raw.selectedAt === "string") {

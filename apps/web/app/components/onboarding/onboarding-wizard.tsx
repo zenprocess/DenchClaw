@@ -232,14 +232,6 @@ export function OnboardingWizard({
         previewNode: <PreviewPeopleTable liveStats={liveStats} />,
       };
     }
-    if (activeClientStep === "skill-template") {
-      const variant: PreviewVariant = "workspace-live";
-      return {
-        previewVariant: variant,
-        previewKey: "skill-template:people-table",
-        previewNode: <PreviewPeopleTable liveStats={liveStats} />,
-      };
-    }
     return {
       previewVariant: "workspace-mock" as PreviewVariant,
       previewKey: "complete",

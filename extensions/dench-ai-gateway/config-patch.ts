@@ -4,6 +4,10 @@ import {
   buildDenchGatewayApiBaseUrl,
   type DenchCloudCatalogModel,
 } from "./models.js";
+import {
+  DENCH_CLOUD_TOOL_ALLOWLIST,
+  DENCH_COMPOSIO_WRAPPER_TOOLS,
+} from "../../src/cli/dench-cloud.js";
 
 export type DenchCloudProviderConfig = {
   baseUrl: string;
@@ -19,38 +23,6 @@ export type ComposioMcpServerConfig = {
     Authorization: string;
   };
 };
-
-const DENCH_COMPOSIO_WRAPPER_TOOLS = [
-  "dench_search_integrations",
-  "dench_execute_integrations",
-] as const;
-const DENCH_CLOUD_TOOL_ALLOWLIST = [
-  "read",
-  "write",
-  "edit",
-  "apply_patch",
-  "exec",
-  "process",
-  "code_execution",
-  "web_fetch",
-  "x_search",
-  "memory_search",
-  "memory_get",
-  "sessions_list",
-  "sessions_history",
-  "sessions_send",
-  "sessions_spawn",
-  "sessions_yield",
-  "subagents",
-  "session_status",
-  "cron",
-  "update_plan",
-  "image",
-  "image_generate",
-  "music_generate",
-  "video_generate",
-  ...DENCH_COMPOSIO_WRAPPER_TOOLS,
-] as const;
 
 export function buildComposioMcpServerConfig(
   gatewayUrl: string,

@@ -137,6 +137,7 @@ function syncToolProviderPolicies(config: UnknownRecord, patchTools: UnknownReco
 
     const providerPolicy = ensureRecord(byProvider, providerId);
     const allow = readStringList(providerPatch.allow);
+    const alsoAllow = readStringList(providerPatch.alsoAllow);
     if (allow.length > 0) {
       const preserved = new Set(
         [...readStringList(providerPolicy.allow), ...readStringList(providerPolicy.alsoAllow)].filter(
@@ -148,10 +149,7 @@ function syncToolProviderPolicies(config: UnknownRecord, patchTools: UnknownReco
         preserved.add(toolName);
       }
       providerPolicy.allow = Array.from(preserved).sort((left, right) => left.localeCompare(right));
-    }
-
-    const alsoAllow = readStringList(providerPatch.alsoAllow);
-    if (alsoAllow.length > 0) {
+    } else if (alsoAllow.length > 0) {
       const preserved = new Set(
         [...readStringList(providerPolicy.alsoAllow), ...readStringList(providerPolicy.allow)].filter(
           (name) => !alsoAllow.includes(name),

@@ -534,27 +534,27 @@ function mergeProviderToolPolicies(existingTools: unknown, patchTools: unknown):
 
     const existingPolicy = asRecord(mergedByProvider[providerId]) ?? {};
     const nextPolicy: Record<string, unknown> = { ...existingPolicy };
-    const allow = uniqueStrings([
-      ...toStringArray(existingPolicy.allow),
-      ...toStringArray(existingPolicy.alsoAllow),
-      ...toStringArray(patchPolicy.allow),
-    ]).sort((left, right) => left.localeCompare(right));
-    const alsoAllow = uniqueStrings([
-      ...toStringArray(existingPolicy.alsoAllow),
-      ...toStringArray(existingPolicy.allow),
-      ...toStringArray(patchPolicy.alsoAllow),
-    ]).sort((left, right) => left.localeCompare(right));
+    const patchAllow = toStringArray(patchPolicy.allow);
+    const patchAlsoAllow = toStringArray(patchPolicy.alsoAllow);
 
-    if (allow.length > 0) {
+    if (patchAllow.length > 0) {
+      const allow = uniqueStrings([
+        ...toStringArray(existingPolicy.allow),
+        ...toStringArray(existingPolicy.alsoAllow),
+        ...patchAllow,
+      ]).sort((left, right) => left.localeCompare(right));
       delete nextPolicy.alsoAllow;
       nextPolicy.allow = allow;
-    } else if (alsoAllow.length > 0) {
-      delete nextPolicy.allow;
+    } else if (patchAlsoAllow.length > 0) {
+      const alsoAllow = uniqueStrings([
+        ...toStringArray(existingPolicy.alsoAllow),
+        ...patchAlsoAllow,
+      ]).sort((left, right) => left.localeCompare(right));
       nextPolicy.alsoAllow = alsoAllow;
     }
     if (typeof patchPolicy.profile === "string" && patchPolicy.profile.trim()) {
       nextPolicy.profile = patchPolicy.profile.trim();
-    } else if (allow.length > 0) {
+    } else if (patchAllow.length > 0) {
       delete nextPolicy.profile;
     }
     mergedByProvider[providerId] = nextPolicy;

@@ -393,7 +393,7 @@ export function WorkspaceSidebar({
 
 	const compactSidebar = (
 		<aside
-			className="flex flex-col h-screen shrink-0 border-r"
+			className="flex flex-col h-full shrink-0 border-r"
 			style={{
 				width: typeof width === "number" ? `${width}px` : width,
 				minWidth: typeof width === "number" ? `${width}px` : width,
@@ -572,7 +572,7 @@ export function WorkspaceSidebar({
 
 	const sidebar = (
 		<aside
-			className={`flex flex-col h-screen shrink-0 ${mobile ? "drawer-left" : "border-r"}`}
+			className={`flex flex-col h-full shrink-0 ${mobile ? "drawer-left" : "border-r"}`}
 			style={{
 				width: typeof width === "number" ? `${width}px` : width,
 				minWidth: typeof width === "number" ? `${width}px` : width,

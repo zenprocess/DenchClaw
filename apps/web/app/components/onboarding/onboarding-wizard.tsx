@@ -252,7 +252,7 @@ export function OnboardingWizard({
   if (activeClientStep === "complete") {
     return (
       <div
-        className="min-h-screen w-full"
+        className="min-h-full w-full"
         style={{ background: "var(--color-background)" }}
       >
         <header className="flex h-16 items-center justify-between px-6 sm:px-10">
@@ -283,7 +283,7 @@ export function OnboardingWizard({
 
   return (
     <div
-      className="min-h-screen w-full"
+      className="min-h-full w-full"
       style={{ background: "var(--color-background)" }}
     >
       {/* Top navbar: logo + wordmark on the left (matches the main workspace

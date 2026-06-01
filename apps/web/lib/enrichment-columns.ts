@@ -255,14 +255,14 @@ export function autoDetectInputField(
 ): FieldCandidate | null {
 	const eligibleFields = getEligibleInputFields(category, fields);
 	if (category === "people") {
-		const emailField = eligibleFields.find(
-			(f) => f.type === "email" || /^e[-_]?mail/i.test(f.name),
-		);
-		if (emailField) return emailField;
 		const linkedinField = eligibleFields.find(
 			(f) => /linkedin/i.test(f.name),
 		);
 		if (linkedinField) return linkedinField;
+		const emailField = eligibleFields.find(
+			(f) => f.type === "email" || /^e[-_]?mail/i.test(f.name),
+		);
+		if (emailField) return emailField;
 	} else {
 		const domainField = eligibleFields.find(
 			(f) => /website|domain|^url$/i.test(f.name),

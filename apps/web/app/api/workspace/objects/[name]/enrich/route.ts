@@ -372,6 +372,10 @@ async function callDenchGateway(
 				return { ok: true, payload: contact.result.person };
 			}
 
+			if (!contact.result.enrichmentId || contact.result.enrichmentId === "unknown") {
+				return { ok: false, error: "No enrichment data returned" };
+			}
+
 			const poll = await pollEnrichmentJobWithTimeout(
 				gatewayUrl,
 				apiKey,

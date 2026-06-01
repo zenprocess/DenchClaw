@@ -85,7 +85,7 @@ export function mapRequiredFieldsToEnrichFields(
     }
     // Apollo-only fields (fullName, headline, linkedinID, etc.) have no enrichFields equivalent.
   }
-  if (tokens.size === 0) return ["work_emails"];
+  if (tokens.size === 0) return undefined;
   return [...tokens];
 }
 
@@ -432,6 +432,12 @@ export async function pollEnrichmentJobWithTimeout(
       return {
         ok: true,
         person: normalizePersonRecord(job.people[0] as Record<string, unknown>),
+      };
+    }
+    if (job.status === "succeeded") {
+      return {
+        ok: false,
+        error: "Enrichment succeeded but returned no data",
       };
     }
     if (job.status === "pending" && attempt < maxAttempts - 1) {

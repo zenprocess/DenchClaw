@@ -83,6 +83,170 @@ var APP_ALIASES = {
   billing: "stripe",
   payments: "stripe"
 };
+var STATIC_COMPOSIO_FALLBACK = {
+  gmail: [
+    {
+      intent: "Read recent emails",
+      tool: "GMAIL_FETCH_EMAILS",
+      required_args: [],
+      arg_hints: {
+        label_ids: 'Must be a JSON array like ["INBOX"].',
+        max_results: "Integer count, for example 10."
+      },
+      default_args: { label_ids: ["INBOX"], max_results: 10 },
+      example_prompts: ["check my recent emails", "show my inbox"]
+    },
+    {
+      intent: "Read one email",
+      tool: "GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID",
+      required_args: ["message_id"],
+      arg_hints: {
+        message_id: "Use the message id from a list result."
+      },
+      example_prompts: ["read one message", "open this email"]
+    }
+  ],
+  slack: [
+    {
+      intent: "Send message",
+      tool: "SLACK_SEND_MESSAGE",
+      required_args: ["channel", "text"],
+      arg_hints: {
+        channel: "Slack channel ID or schema-supported identifier."
+      },
+      example_prompts: ["send a Slack message", "post in Slack"]
+    }
+  ],
+  github: [
+    {
+      intent: "List repos",
+      tool: "GITHUB_LIST_REPOSITORIES_FOR_THE_AUTHENTICATED_USER",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["list my GitHub repositories"]
+    },
+    {
+      intent: "Find pull requests",
+      tool: "GITHUB_FIND_PULL_REQUESTS",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["check my recent PRs", "show my recent pull requests"]
+    },
+    {
+      intent: "List repo pull requests",
+      tool: "GITHUB_LIST_PULL_REQUESTS",
+      required_args: ["owner", "repo"],
+      arg_hints: {
+        owner: "Repository owner or organization login.",
+        repo: "Repository name without the .git suffix."
+      },
+      example_prompts: ["list PRs for this repo", "show pull requests in this repository"]
+    },
+    {
+      intent: "Get pull request",
+      tool: "GITHUB_GET_A_PULL_REQUEST",
+      required_args: ["owner", "repo", "pull_number"],
+      arg_hints: {
+        owner: "Repository owner or organization login.",
+        repo: "Repository name without the .git suffix.",
+        pull_number: "Numeric pull request number."
+      },
+      example_prompts: ["show this pull request", "get PR details"]
+    }
+  ],
+  notion: [
+    {
+      intent: "Search pages",
+      tool: "NOTION_SEARCH",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["search Notion", "find a Notion page"]
+    }
+  ],
+  "google-calendar": [
+    {
+      intent: "Upcoming events",
+      tool: "GOOGLE_CALENDAR_EVENTS_LIST",
+      required_args: [],
+      arg_hints: {
+        time_min: "RFC3339 datetime string.",
+        time_max: "RFC3339 datetime string."
+      },
+      example_prompts: ["what's upcoming on my calendar", "show upcoming calendar events"]
+    },
+    {
+      intent: "List events",
+      tool: "GOOGLE_CALENDAR_EVENTS_LIST",
+      required_args: [],
+      arg_hints: {
+        time_min: "RFC3339 datetime string.",
+        time_max: "RFC3339 datetime string."
+      },
+      example_prompts: ["show my calendar events", "list upcoming meetings"]
+    },
+    {
+      intent: "Find event",
+      tool: "GOOGLE_CALENDAR_EVENTS_LIST",
+      required_args: [],
+      arg_hints: {
+        query: "Search text for matching events if the tool supports it.",
+        time_min: "RFC3339 datetime string.",
+        time_max: "RFC3339 datetime string."
+      },
+      example_prompts: ["find my event tomorrow", "search for a calendar event"]
+    }
+  ],
+  linear: [
+    {
+      intent: "List issues",
+      tool: "LINEAR_LIST_ISSUES",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["list Linear issues", "show Linear tickets"]
+    }
+  ],
+  stripe: [
+    {
+      intent: "List subscriptions",
+      tool: "STRIPE_LIST_SUBSCRIPTIONS",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: [
+        "list subscriptions",
+        "show subscriptions with trial info",
+        "calculate recurring revenue from subscriptions"
+      ]
+    },
+    {
+      intent: "Search subscriptions",
+      tool: "STRIPE_SEARCH_SUBSCRIPTIONS",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["search Stripe subscriptions", "find a Stripe subscription"]
+    },
+    {
+      intent: "List customers",
+      tool: "STRIPE_LIST_CUSTOMERS",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["list Stripe customers"]
+    },
+    {
+      intent: "List invoices",
+      tool: "STRIPE_LIST_INVOICES",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["list Stripe invoices"]
+    },
+    {
+      intent: "Retrieve balance",
+      tool: "STRIPE_RETRIEVE_BALANCE",
+      required_args: [],
+      arg_hints: {},
+      example_prompts: ["show Stripe balance"]
+    }
+  ]
+};
 function jsonResult(payload) {
   return {
     content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
@@ -141,6 +305,19 @@ function buildResolverActionDetails(action, app) {
     action_link_markdown: buildComposioActionLink(action, normalizedApp)
   };
 }
+function tokenize(value) {
+  return value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length > 1);
+}
+function scoreMatch(text, queryTokens) {
+  const haystack = text.toLowerCase();
+  let score = 0;
+  for (const token of queryTokens) {
+    if (haystack.includes(token)) {
+      score += token.length > 4 ? 3 : 1;
+    }
+  }
+  return score;
+}
 function resolveGatewayUrlFromApi(api) {
   const plugins = asRecord(asRecord(api?.config)?.plugins)?.entries;
   const denchGateway = asRecord(asRecord(plugins)?.["dench-ai-gateway"]);
@@ -186,6 +363,83 @@ async function postComposioGatewayJson(params) {
     };
   }
 }
+function chooseFallbackTool(app, queryText) {
+  const recipes = STATIC_COMPOSIO_FALLBACK[app] ?? [];
+  const queryTokens = tokenize(queryText);
+  let best = recipes[0] ?? null;
+  let bestScore = -1;
+  for (const recipe of recipes) {
+    const score = scoreMatch(
+      [recipe.intent, recipe.tool, ...recipe.example_prompts ?? []].join(" "),
+      queryTokens
+    );
+    if (score > bestScore) {
+      best = recipe;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+function buildStaticFallbackInputSchema(recipe) {
+  const properties = {};
+  for (const arg of recipe.required_args ?? []) {
+    properties[arg] = { type: "string" };
+  }
+  for (const [key, hint] of Object.entries(recipe.arg_hints ?? {})) {
+    properties[key] = {
+      type: typeof hint === "number" ? "number" : Array.isArray(hint) ? "array" : "string",
+      description: Array.isArray(hint) ? JSON.stringify(hint) : String(hint)
+    };
+  }
+  return {
+    type: "object",
+    properties,
+    required: recipe.required_args ?? []
+  };
+}
+function buildStaticFallbackSearchResults(toolkitSlug, queryText) {
+  const recipe = chooseFallbackTool(toolkitSlug, queryText);
+  if (!recipe) {
+    return [];
+  }
+  return [
+    {
+      tool_slug: recipe.tool,
+      name: recipe.intent,
+      description: `Known ${humanizeResolverApp(toolkitSlug)} recipe (local fallback because gateway search returned no matches).`,
+      toolkit: {
+        slug: toolkitSlug,
+        name: humanizeResolverApp(toolkitSlug)
+      },
+      input_schema: buildStaticFallbackInputSchema(recipe),
+      suggested_arguments: recipe.default_args ?? {},
+      is_connected: true,
+      account_count: null,
+      accounts: [],
+      match_source: "static_recipe_fallback"
+    }
+  ];
+}
+function buildEmptyConnectedSearchInstruction(params) {
+  if (params.fallbackResults.length > 0) {
+    const top = params.fallbackResults[0] ?? {};
+    const slug = readString(top.tool_slug) ?? "the top fallback tool_slug";
+    const suggested = top.suggested_arguments;
+    const suggestedText = suggested && typeof suggested === "object" && Object.keys(suggested).length > 0 ? ` and suggested_arguments ${JSON.stringify(suggested)}` : "";
+    return [
+      `Gateway search returned no matches, but ${humanizeResolverApp(params.normalizedToolkit)} is connected.`,
+      "Do NOT stop the task, do NOT mention gog, and do NOT switch to shell CLIs.",
+      `Call ${DENCH_EXECUTE_INTEGRATIONS_NAME} immediately with tool_slug "${slug}"${suggestedText}.`,
+      `If execution fails, retry ${DENCH_SEARCH_INTEGRATIONS_NAME} with toolkit only (omit query) or a shorter query.`
+    ].join(" ");
+  }
+  return [
+    `No ${humanizeResolverApp(params.normalizedToolkit)} integration tools matched gateway search.`,
+    "Do NOT stop \u2014 retry search with toolkit only (omit query), a shorter query, or a different keyword.",
+    `Then execute the best match with ${DENCH_EXECUTE_INTEGRATIONS_NAME}.`,
+    "Never fall back to gog while this app is connected."
+  ].join(" ");
+}
 function createDenchSearchIntegrationsTool(api) {
   return {
     name: DENCH_SEARCH_INTEGRATIONS_NAME,
@@ -218,8 +472,27 @@ function createDenchSearchIntegrationsTool(api) {
           guidance: `Check the Dench Cloud gateway/API key configuration, then retry ${DENCH_SEARCH_INTEGRATIONS_NAME}.`
         });
       }
-      const items = asRecordArray(gatewayResult.items) ?? [];
-      const connectedToolkits = Array.isArray(gatewayResult.connected_toolkits) ? gatewayResult.connected_toolkits : [];
+      let items = asRecordArray(gatewayResult.items) ?? [];
+      let connectedToolkits = Array.isArray(gatewayResult.connected_toolkits) ? gatewayResult.connected_toolkits : [];
+      if (items.length === 0 && normalizedToolkit && query && connectedToolkits.includes(normalizedToolkit)) {
+        const retryResult = await postComposioGatewayJson({
+          api,
+          path: "/v1/composio/tools/search",
+          body: {
+            toolkit_slug: normalizedToolkit,
+            limit
+          }
+        });
+        if (retryResult) {
+          const retryItems = asRecordArray(retryResult.items) ?? [];
+          if (retryItems.length > 0) {
+            items = retryItems;
+          }
+          if (Array.isArray(retryResult.connected_toolkits)) {
+            connectedToolkits = retryResult.connected_toolkits;
+          }
+        }
+      }
       if (items.length === 0 && normalizedToolkit && !connectedToolkits.includes(normalizedToolkit)) {
         const actionLink = buildComposioActionLink("connect", normalizedToolkit);
         return jsonResult({
@@ -234,13 +507,19 @@ function createDenchSearchIntegrationsTool(api) {
         });
       }
       if (items.length === 0) {
+        const fallbackResults = normalizedToolkit && connectedToolkits.includes(normalizedToolkit) ? buildStaticFallbackSearchResults(normalizedToolkit, query) : [];
         return jsonResult({
           query,
           toolkit_filter: normalizedToolkit,
-          result_count: 0,
-          results: [],
+          result_count: fallbackResults.length,
+          results: fallbackResults,
           connected_toolkits: connectedToolkits,
-          instruction: normalizedToolkit ? `No ${humanizeResolverApp(normalizedToolkit)} integration tools matched. Refine the query or try a broader search.` : "No integration tools matched. Refine the query or specify a toolkit."
+          search_source: fallbackResults.length > 0 ? "static_recipe_fallback" : "gateway_tool_router",
+          instruction: normalizedToolkit && connectedToolkits.includes(normalizedToolkit) ? buildEmptyConnectedSearchInstruction({
+            normalizedToolkit,
+            query,
+            fallbackResults
+          }) : normalizedToolkit ? `No ${humanizeResolverApp(normalizedToolkit)} integration tools matched. Refine the query or try a broader search.` : "No integration tools matched. Refine the query or specify a toolkit."
         });
       }
       const results = items.map((item) => {
@@ -295,6 +574,7 @@ function buildComposioDefaultGuidance(composioAppsSkillPath) {
     "- Missing first-time connection example: `[Connect Slack](dench://composio/connect?toolkit=slack&name=Slack)`.",
     '- If the search returns `availability: "connect_required"`, briefly explain the app is not connected and end with the connect link.',
     "- If an integration tool call fails because of argument shape, fix the arguments and retry once before considering any fallback.",
+    "- When search returns zero gateway matches but the app is connected, the tool may include `static_recipe_fallback` results with `suggested_arguments`. Execute the top match immediately \u2014 do NOT stop the turn or switch to gog.",
     "- When the user implicitly asks for the full dataset, keep paginating until the tool response no longer advertises more pages.",
     ""
   ].join("\n");

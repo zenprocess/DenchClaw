@@ -921,12 +921,23 @@ async function fetchDenchCloudCatalog(gatewayUrl) {
     };
   }
 }
+var DENCH_CLOUD_API_KEY_VALIDATION_TIMEOUT_MS = 15e3;
 async function validateDenchCloudApiKey(gatewayUrl, apiKey) {
-  const response = await fetch(`${buildDenchGatewayApiBaseUrl(gatewayUrl)}/models`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`
-    }
-  });
+  const apiBaseUrl = buildDenchGatewayApiBaseUrl(gatewayUrl);
+  let response;
+  try {
+    response = await fetch(`${apiBaseUrl}/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      },
+      signal: AbortSignal.timeout(DENCH_CLOUD_API_KEY_VALIDATION_TIMEOUT_MS)
+    });
+  } catch (err) {
+    const cause = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not reach Dench Cloud gateway at ${apiBaseUrl} (${cause}). Check your network connection and gateway URL, then try again.`
+    );
+  }
   if (response.ok) {
     return;
   }

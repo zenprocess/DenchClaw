@@ -454,5 +454,5 @@ export async function pollEnrichmentJobWithTimeout(
     }
   }
 
-  return { ok: false, error: "Enrichment timed out", pending: true };
+  return { ok: false, error: "Enrichment timed out" };
 }

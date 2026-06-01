@@ -110,10 +110,13 @@ describe("workspace enrichment route", () => {
     const text = await response.text();
     expect(gatewayPersonContact).toHaveBeenCalledTimes(1);
     const [, , params] = vi.mocked(gatewayPersonContact).mock.calls[0];
+    // person.name maps to the Apollo `fullName` token, which has no contact-field
+    // mapping, so we send no enrichFields narrowing and let the gateway run its
+    // default backfill rather than forcing a work_emails-only request.
     expect(params).toMatchObject({
       linkedinUrl: "https://www.linkedin.com/in/janedoe",
-      enrichFields: ["work_emails"],
     });
+    expect(params.enrichFields).toBeUndefined();
     // Value extracted and written back, surfaced as a progress event.
     expect(text).toContain('"type":"progress"');
     expect(text).toContain("Jane Doe");
@@ -218,7 +221,10 @@ describe("workspace enrichment route", () => {
     expect(text).toContain("Enrichment still pending");
   });
 
-  it("rejects email-only people enrichment without calling the gateway", async () => {
+  it("rejects an email input field for people enrichment before touching the gateway", async () => {
+    // Email is no longer an eligible people identifier (the gateway resolves
+    // contacts from LinkedIn URLs), so an email-typed input field is rejected at
+    // validation rather than failing per-row downstream.
     const { duckdbQueryOnFile } = await import("@/lib/workspace");
     mockDuckDb(vi.mocked(duckdbQueryOnFile), {
       inputField: { name: "email", type: "email" },
@@ -243,6 +249,40 @@ describe("workspace enrichment route", () => {
       { params: Promise.resolve({ name: "leads" }) },
     );
 
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Input field 'email' is not supported for people enrichment.",
+    });
+    expect(gatewayPersonContact).not.toHaveBeenCalled();
+  });
+
+  it("rejects email values that slip through a LinkedIn-typed field", async () => {
+    // A LinkedIn-typed field passes validation, but a per-row value that is an
+    // email (not a LinkedIn URL) must not be sent to the contact endpoint.
+    const { duckdbQueryOnFile } = await import("@/lib/workspace");
+    mockDuckDb(vi.mocked(duckdbQueryOnFile), {
+      inputField: { name: "LinkedIn URL", type: "url" },
+      inputValue: "jane@acme.com",
+    });
+
+    const { gatewayPersonContact } = await import("@/lib/dench-gateway-enrichment");
+
+    const { POST } = await import("./route.js");
+    const response = await POST(
+      new Request("http://localhost/api/workspace/objects/leads/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fieldId: "field_1",
+          apolloPath: "person.name",
+          category: "people",
+          inputFieldName: "LinkedIn URL",
+          scope: 1,
+        }),
+      }),
+      { params: Promise.resolve({ name: "leads" }) },
+    );
+
     expect(response.status).toBe(200);
     const text = await response.text();
     expect(gatewayPersonContact).not.toHaveBeenCalled();
@@ -252,7 +292,7 @@ describe("workspace enrichment route", () => {
   it("skips unknown people identifiers instead of treating them as a LinkedIn URL", async () => {
     const { duckdbQueryOnFile } = await import("@/lib/workspace");
     mockDuckDb(vi.mocked(duckdbQueryOnFile), {
-      inputField: { name: "email", type: "email" },
+      inputField: { name: "LinkedIn URL", type: "url" },
       inputValue: "Jane Example",
     });
 
@@ -267,7 +307,7 @@ describe("workspace enrichment route", () => {
           fieldId: "field_1",
           apolloPath: "person.name",
           category: "people",
-          inputFieldName: "email",
+          inputFieldName: "LinkedIn URL",
           scope: 1,
         }),
       }),
@@ -429,7 +469,7 @@ describe("workspace enrichment route", () => {
       seenSqls.push(sql);
       if (sql.includes("SELECT id FROM objects WHERE name")) return [{ id: "obj_1" }] as never;
       if (sql.includes("SELECT id, name, type FROM fields")) {
-        return [{ id: "input_1", name: "email", type: "email" }] as never;
+        return [{ id: "input_1", name: "LinkedIn URL", type: "url" }] as never;
       }
       if (sql.includes("SELECT id FROM fields WHERE id")) return [{ id: "field_1" }] as never;
       if (sql.includes("FROM entries e")) return [] as never;
@@ -445,7 +485,7 @@ describe("workspace enrichment route", () => {
           fieldId: "field_1",
           apolloPath: "person.name",
           category: "people",
-          inputFieldName: "email",
+          inputFieldName: "LinkedIn URL",
           scope: "empty",
           entryIds: ["entry_1"],
         }),
@@ -512,7 +552,7 @@ describe("workspace enrichment route", () => {
       seenSqls.push(sql);
       if (sql.includes("SELECT id FROM objects WHERE name")) return [{ id: "obj_1" }] as never;
       if (sql.includes("SELECT id, name, type FROM fields")) {
-        return [{ id: "input_1", name: "email", type: "email" }] as never;
+        return [{ id: "input_1", name: "LinkedIn URL", type: "url" }] as never;
       }
       if (sql.includes("SELECT id FROM fields WHERE id")) return [{ id: "field_1" }] as never;
       if (sql.includes("FROM entries e")) return [] as never;
@@ -528,7 +568,7 @@ describe("workspace enrichment route", () => {
           fieldId: "field_1",
           apolloPath: "person.name",
           category: "people",
-          inputFieldName: "email",
+          inputFieldName: "LinkedIn URL",
           scope: "all",
           entryIds: [],
         }),

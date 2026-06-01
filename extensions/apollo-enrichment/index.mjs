@@ -3,6 +3,11 @@ var ENRICHMENT_BASE_PATH = "/v1/enrichment";
 function readTrimmedString(value) {
   return typeof value === "string" && value.trim() ? value.trim() : void 0;
 }
+function stripTrailingSlashes(value) {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end--;
+  return value.slice(0, end);
+}
 function readStringList(value) {
   if (!Array.isArray(value)) return void 0;
   const items = value.map((item) => readTrimmedString(item)).filter((item) => Boolean(item));
@@ -23,7 +28,7 @@ function mapRequiredFieldsToEnrichFields(requiredFields) {
       return ["all"];
     }
   }
-  if (tokens.size === 0) return ["work_emails"];
+  if (tokens.size === 0) return void 0;
   return [...tokens];
 }
 function mapEnrichFieldsParam(enrichFields, requiredFields) {
@@ -107,7 +112,7 @@ function interpretPersonContactResponse(payload) {
       };
     }
   }
-  if (payload.enrichmentId && payload.status === "queued") {
+  if (payload.enrichmentId) {
     return {
       kind: "queued",
       enrichmentId: payload.enrichmentId,
@@ -115,19 +120,9 @@ function interpretPersonContactResponse(payload) {
       pollPath: `/v1/enrichment/jobs/${payload.enrichmentId}`
     };
   }
-  if (payload.status === "completed" && payload.cachedResults.length === 0) {
-    return {
-      kind: "queued",
-      enrichmentId: payload.enrichmentId ?? "unknown",
-      status: "queued",
-      pollPath: payload.enrichmentId ? `/v1/enrichment/jobs/${payload.enrichmentId}` : "/v1/enrichment/jobs/:id"
-    };
-  }
   return {
-    kind: "queued",
-    enrichmentId: payload.enrichmentId ?? "unknown",
-    status: "queued",
-    pollPath: payload.enrichmentId ? `/v1/enrichment/jobs/${payload.enrichmentId}` : "/v1/enrichment/jobs/:id"
+    kind: "empty",
+    reason: "Gateway returned no enrichment result and no job to poll."
   };
 }
 async function formatGatewayError(response) {
@@ -152,7 +147,8 @@ async function formatGatewayError(response) {
   return `Gateway request failed (HTTP ${response.status})`;
 }
 async function gatewayFetch(gatewayUrl, apiKey, options) {
-  const url = `${gatewayUrl.replace(/\/+$/, "")}${options.path.startsWith("/") ? options.path : `/${options.path}`}`;
+  const base = stripTrailingSlashes(gatewayUrl);
+  const url = `${base}${options.path.startsWith("/") ? options.path : `/${options.path}`}`;
   const headers = {
     authorization: `Bearer ${apiKey}`
   };
@@ -385,6 +381,9 @@ async function executeDenchEnrich(gatewayUrl, apiKey, params) {
       }
       if (result.result.kind === "person") {
         return jsonResult({ person: result.result.person });
+      }
+      if (result.result.kind === "empty") {
+        return jsonResult({ error: result.result.reason });
       }
       return jsonResult({
         enrichmentId: result.result.enrichmentId,

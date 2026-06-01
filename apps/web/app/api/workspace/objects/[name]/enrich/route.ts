@@ -371,6 +371,9 @@ async function callDenchGateway(
 			if (contact.result.kind === "person") {
 				return { ok: true, payload: contact.result.person };
 			}
+			if (contact.result.kind === "empty") {
+				return { ok: false, error: contact.result.reason };
+			}
 
 			const poll = await pollEnrichmentJobWithTimeout(
 				gatewayUrl,

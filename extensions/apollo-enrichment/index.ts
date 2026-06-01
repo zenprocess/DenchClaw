@@ -139,6 +139,9 @@ async function executeDenchEnrich(
       if (result.result.kind === "person") {
         return jsonResult({ person: result.result.person });
       }
+      if (result.result.kind === "empty") {
+        return jsonResult({ error: result.result.reason });
+      }
       return jsonResult({
         enrichmentId: result.result.enrichmentId,
         status: result.result.status,

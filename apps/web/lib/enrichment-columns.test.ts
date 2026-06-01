@@ -10,7 +10,7 @@ import {
 } from "./enrichment-columns";
 
 describe("getEligibleInputFields", () => {
-	it("limits people enrichment inputs to email and LinkedIn fields", () => {
+	it("limits people enrichment inputs to LinkedIn fields (email is rejected by the gateway)", () => {
 		const fields = [
 			{ id: "name", name: "Full Name", type: "text" },
 			{ id: "email", name: "Email", type: "email" },
@@ -19,7 +19,6 @@ describe("getEligibleInputFields", () => {
 		];
 
 		expect(getEligibleInputFields("people", fields).map((field) => field.id)).toEqual([
-			"email",
 			"linkedin",
 		]);
 	});
@@ -45,17 +44,20 @@ describe("getEligibleInputFields", () => {
 		expect(getAvailableEnrichmentCategories("companies", [])).toEqual(["company"]);
 	});
 
-	it("makes enrichment available on generic tables based on identifier columns", () => {
-		expect(getAvailableEnrichmentCategories("investors", [
-			{ id: "email", name: "Email", type: "email" },
-		])).toEqual(["people"]);
-
+	it("makes company enrichment available on generic tables with a domain column", () => {
 		expect(getAvailableEnrichmentCategories("portfolio", [
 			{ id: "domain", name: "Domain", type: "text" },
 		])).toEqual(["company"]);
 	});
 
-	it("shows both enrichment categories on generic tables when LinkedIn is ambiguous or no identifiers exist yet", () => {
+	it("shows both enrichment categories on generic tables when identifiers are ambiguous or email-only", () => {
+		// Email is no longer a people-enrichment identifier (the gateway requires a
+		// LinkedIn URL for people), so an email-only generic table can't be pinned
+		// to a single category and surfaces both options.
+		expect(getAvailableEnrichmentCategories("investors", [
+			{ id: "email", name: "Email", type: "email" },
+		])).toEqual(["people", "company"]);
+
 		expect(getAvailableEnrichmentCategories("pipeline", [
 			{ id: "linkedin", name: "LinkedIn URL", type: "url" },
 		])).toEqual(["people", "company"]);
@@ -114,16 +116,14 @@ describe("getEnrichFieldsForApolloPath", () => {
 		expect(getEnrichFieldsForApolloPath("people", "person.unknown")).toBeUndefined();
 	});
 
-	it("falls back to work_emails for non-empty Apollo-only fields with no direct gateway token", () => {
-		// industryList / website are Apollo metadata tokens with no enrichFields
-		// mapping, so the mapper defaults to the work_emails contract rather than
-		// dropping the narrowing request entirely.
-		expect(getEnrichFieldsForApolloPath("company", "organization.industry")).toEqual([
-			"work_emails",
-		]);
-		expect(getEnrichFieldsForApolloPath("company", "organization.website_url")).toEqual([
-			"work_emails",
-		]);
+	it("returns undefined for non-contact Apollo fields so the gateway uses default backfill", () => {
+		// industryList / website are Apollo metadata tokens with no contact-field
+		// mapping. We must NOT narrow these to work_emails, otherwise the gateway
+		// would only attempt email backfill and the requested field would be
+		// missing from the response. Sending no token lets the gateway run its
+		// default backfill and return the metadata.
+		expect(getEnrichFieldsForApolloPath("company", "organization.industry")).toBeUndefined();
+		expect(getEnrichFieldsForApolloPath("company", "organization.website_url")).toBeUndefined();
 	});
 });
 

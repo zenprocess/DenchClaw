@@ -52,10 +52,21 @@ export type HybridPersonResult =
       enrichmentId: string;
       status: "queued";
       pollPath: string;
-    };
+    }
+  | { kind: "empty"; reason: string };
 
 function readTrimmedString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/**
+ * Linear-time trailing-slash trim. Avoids the `/\/+$/` regex flagged by
+ * CodeQL as a polynomial regular expression on uncontrolled data.
+ */
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47 /* "/" */) end--;
+  return value.slice(0, end);
 }
 
 function readStringList(value: unknown): string[] | undefined {
@@ -85,7 +96,9 @@ export function mapRequiredFieldsToEnrichFields(
     }
     // Apollo-only fields (fullName, headline, linkedinID, etc.) have no enrichFields equivalent.
   }
-  if (tokens.size === 0) return ["work_emails"];
+  // No contact token matched (e.g. enriching name/headline/title): return undefined
+  // so the gateway uses its default backfill instead of narrowing to email-only.
+  if (tokens.size === 0) return undefined;
   return [...tokens];
 }
 
@@ -222,7 +235,10 @@ export function interpretPersonContactResponse(
       };
     }
   }
-  if (payload.enrichmentId && payload.status === "queued") {
+  // A real job id means the gateway queued work we can poll. This covers both
+  // an explicit "queued" status and a "completed" response with an empty cache
+  // (the job is still being backfilled upstream).
+  if (payload.enrichmentId) {
     return {
       kind: "queued",
       enrichmentId: payload.enrichmentId,
@@ -230,23 +246,11 @@ export function interpretPersonContactResponse(
       pollPath: `/v1/enrichment/jobs/${payload.enrichmentId}`,
     };
   }
-  if (payload.status === "completed" && payload.cachedResults.length === 0) {
-    return {
-      kind: "queued",
-      enrichmentId: payload.enrichmentId ?? "unknown",
-      status: "queued",
-      pollPath: payload.enrichmentId
-        ? `/v1/enrichment/jobs/${payload.enrichmentId}`
-        : "/v1/enrichment/jobs/:id",
-    };
-  }
+  // No cached result and no job id to poll: surface as an empty result instead
+  // of polling a placeholder id that can never resolve.
   return {
-    kind: "queued",
-    enrichmentId: payload.enrichmentId ?? "unknown",
-    status: "queued",
-    pollPath: payload.enrichmentId
-      ? `/v1/enrichment/jobs/${payload.enrichmentId}`
-      : "/v1/enrichment/jobs/:id",
+    kind: "empty",
+    reason: "Gateway returned no enrichment result and no job to poll.",
   };
 }
 
@@ -279,7 +283,8 @@ export async function gatewayFetch<T = unknown>(
   apiKey: string,
   options: GatewayFetchOptions,
 ): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number }> {
-  const url = `${gatewayUrl.replace(/\/+$/, "")}${options.path.startsWith("/") ? options.path : `/${options.path}`}`;
+  const base = stripTrailingSlashes(gatewayUrl);
+  const url = `${base}${options.path.startsWith("/") ? options.path : `/${options.path}`}`;
   const headers: Record<string, string> = {
     authorization: `Bearer ${apiKey}`,
   };
@@ -428,11 +433,17 @@ export async function pollEnrichmentJobWithTimeout(
         error: job.error?.message ?? "Enrichment job failed",
       };
     }
-    if (job.status === "succeeded" && job.people && job.people.length > 0) {
-      return {
-        ok: true,
-        person: normalizePersonRecord(job.people[0] as Record<string, unknown>),
-      };
+    if (job.status === "succeeded") {
+      if (job.people && job.people.length > 0) {
+        return {
+          ok: true,
+          person: normalizePersonRecord(job.people[0] as Record<string, unknown>),
+        };
+      }
+      // Succeeded with no people: a definitive empty result, not a pending job.
+      // Returning here avoids spinning through the remaining attempts (which
+      // would otherwise misreport "Enrichment timed out").
+      return { ok: false, error: "No enrichment data found" };
     }
     if (job.status === "pending" && attempt < maxAttempts - 1) {
       await new Promise((resolve) => setTimeout(resolve, delayMs));

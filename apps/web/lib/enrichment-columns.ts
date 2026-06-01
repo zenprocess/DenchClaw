@@ -194,8 +194,9 @@ export function getEnrichmentColumns(
 // Input requirements per category
 // ---------------------------------------------------------------------------
 
+// The Dench gateway enriches people from a LinkedIn URL only; email-only input
+// is rejected by the enrich route, so email is intentionally not a people input.
 export const PEOPLE_INPUTS: EnrichmentInputDef[] = [
-	{ kind: "email", label: "Email" },
 	{ kind: "linkedin", label: "LinkedIn URL" },
 ];
 
@@ -219,7 +220,8 @@ export function isEligibleInputField(
 	field: FieldCandidate,
 ): boolean {
 	if (category === "people") {
-		return field.type === "email" || /^e[-_]?mail/i.test(field.name) || /linkedin/i.test(field.name);
+		// People enrichment requires a LinkedIn URL; email is not accepted.
+		return /linkedin/i.test(field.name);
 	}
 
 	return (
@@ -255,10 +257,7 @@ export function autoDetectInputField(
 ): FieldCandidate | null {
 	const eligibleFields = getEligibleInputFields(category, fields);
 	if (category === "people") {
-		const emailField = eligibleFields.find(
-			(f) => f.type === "email" || /^e[-_]?mail/i.test(f.name),
-		);
-		if (emailField) return emailField;
+		// People enrichment requires a LinkedIn URL; never default to email.
 		const linkedinField = eligibleFields.find(
 			(f) => /linkedin/i.test(f.name),
 		);

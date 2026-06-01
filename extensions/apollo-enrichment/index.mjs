@@ -37,7 +37,6 @@ function buildPersonContactBody(params) {
   const lastName = readTrimmedString(params.lastName) ?? readTrimmedString(params.last_name);
   const domain = readTrimmedString(params.domain);
   const companyName = readTrimmedString(params.organizationName) ?? readTrimmedString(params.organization_name);
-  const email = readTrimmedString(params.email);
   const contact = {};
   if (linkedinUrl) contact.linkedinUrl = linkedinUrl;
   if (firstName) contact.firstName = firstName;
@@ -50,13 +49,9 @@ function buildPersonContactBody(params) {
   );
   if (enrichFields) contact.enrichFields = enrichFields;
   if (!linkedinUrl && !(firstName && lastName && (domain || companyName))) {
-    if (email && linkedinUrl) {
-    }
-    if (!linkedinUrl && !(firstName && lastName && (domain || companyName))) {
-      return {
-        error: "Person contact requires linkedinUrl OR firstName+lastName plus domain or companyName."
-      };
-    }
+    return {
+      error: "Person contact requires linkedinUrl OR firstName+lastName plus domain or companyName."
+    };
   }
   return { contacts: [contact] };
 }

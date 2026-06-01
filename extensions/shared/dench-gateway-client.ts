@@ -107,7 +107,6 @@ export function buildPersonContactBody(params: {
   const domain = readTrimmedString(params.domain);
   const companyName =
     readTrimmedString(params.organizationName) ?? readTrimmedString(params.organization_name);
-  const email = readTrimmedString(params.email);
 
   const contact: Record<string, unknown> = {};
   if (linkedinUrl) contact.linkedinUrl = linkedinUrl;
@@ -123,15 +122,10 @@ export function buildPersonContactBody(params: {
   if (enrichFields) contact.enrichFields = enrichFields;
 
   if (!linkedinUrl && !(firstName && lastName && (domain || companyName))) {
-    if (email && linkedinUrl) {
-      // email alone is not supported by person/contact; keep error path below
-    }
-    if (!linkedinUrl && !(firstName && lastName && (domain || companyName))) {
-      return {
-        error:
-          "Person contact requires linkedinUrl OR firstName+lastName plus domain or companyName.",
-      };
-    }
+    return {
+      error:
+        "Person contact requires linkedinUrl OR firstName+lastName plus domain or companyName.",
+    };
   }
 
   return { contacts: [contact] };

@@ -5,6 +5,7 @@ import {
 	extractEnrichmentValue,
 	getAvailableEnrichmentCategories,
 	getEligibleInputFields,
+	getEnrichFieldsForApolloPath,
 	getRequiredFieldsForApolloPath,
 } from "./enrichment-columns";
 
@@ -86,6 +87,43 @@ describe("requiredFields mapping", () => {
 
 	it("returns an empty list for unknown apolloPaths so the gateway uses default backfill", () => {
 		expect(getRequiredFieldsForApolloPath("people", "person.unknown")).toEqual([]);
+	});
+});
+
+describe("getEnrichFieldsForApolloPath", () => {
+	it("maps a phone requiredField to the gateway phones token", () => {
+		expect(
+			getEnrichFieldsForApolloPath("people", "person.contact.phone_numbers.0.sanitized_number"),
+		).toEqual(["phones"]);
+	});
+
+	it("maps email/work_emails requiredFields to the gateway work_emails token", () => {
+		const emailColumn = PEOPLE_ENRICHMENT_COLUMNS.find((column) => column.label === "Email");
+		expect(emailColumn).toBeDefined();
+		expect(getEnrichFieldsForApolloPath("people", emailColumn!.apolloPath)).toEqual([
+			"work_emails",
+		]);
+	});
+
+	it("returns undefined when the column carries no enrichFields contract (default backfill)", () => {
+		// Title has an empty requiredFields list, so no narrowing token is sent.
+		expect(getEnrichFieldsForApolloPath("people", "person.title")).toBeUndefined();
+	});
+
+	it("returns undefined for unknown apolloPaths so the gateway uses default backfill", () => {
+		expect(getEnrichFieldsForApolloPath("people", "person.unknown")).toBeUndefined();
+	});
+
+	it("falls back to work_emails for non-empty Apollo-only fields with no direct gateway token", () => {
+		// industryList / website are Apollo metadata tokens with no enrichFields
+		// mapping, so the mapper defaults to the work_emails contract rather than
+		// dropping the narrowing request entirely.
+		expect(getEnrichFieldsForApolloPath("company", "organization.industry")).toEqual([
+			"work_emails",
+		]);
+		expect(getEnrichFieldsForApolloPath("company", "organization.website_url")).toEqual([
+			"work_emails",
+		]);
 	});
 });
 

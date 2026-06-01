@@ -1,6 +1,11 @@
+import {
+	mapRequiredFieldsToEnrichFields,
+	type EnrichFieldToken,
+} from "@/lib/dench-gateway-enrichment";
+
 // ---------------------------------------------------------------------------
 // Enrichment column definitions, object category detection, and helpers
-// for the Apollo enrichment feature.
+// for Dench gateway enrichment (legacy `apolloPath` keys kept for DB compat).
 // ---------------------------------------------------------------------------
 
 export type EnrichmentCategory = "people" | "company";
@@ -11,12 +16,11 @@ export type EnrichmentColumnDef = {
 	label: string;
 	key: string;
 	fieldType: string;
-	/** Dot-path into the Apollo response payload to extract the value. */
+	/** Dot-path into the enrichment response payload to extract the value. */
 	apolloPath: string;
 	/**
-	 * Canonical Dench gateway field names sent in the `requiredFields` contract.
-	 * Each entry must be on the gateway allowlist when non-empty.
-	 * Omit (empty array) so the gateway uses its default backfill behavior.
+	 * Legacy column metadata tokens mapped to gateway `enrichFields` where applicable.
+	 * Empty array means no narrowing contract (gateway default backfill).
 	 */
 	requiredFields: string[];
 	/**
@@ -66,7 +70,7 @@ export const PEOPLE_ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
 		fieldType: "email",
 		apolloPath: "person.email",
 		requiredFields: ["email"],
-		extractionFallbacks: ["email"],
+		extractionFallbacks: ["email", "emails.0.email"],
 	},
 	{
 		label: "Headline",
@@ -98,7 +102,12 @@ export const PEOPLE_ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
 		fieldType: "phone",
 		apolloPath: "person.contact.phone_numbers.0.sanitized_number",
 		requiredFields: ["phone"],
-		extractionFallbacks: ["phone", "person.phone"],
+		extractionFallbacks: [
+			"phone",
+			"person.phone",
+			"phones.0.number",
+			"phones.0.sanitized_number",
+		],
 	},
 	{
 		label: "Title",
@@ -129,7 +138,7 @@ export const COMPANY_ENRICHMENT_COLUMNS: EnrichmentColumnDef[] = [
 		fieldType: "text",
 		apolloPath: "organization.name",
 		requiredFields: ["name"],
-		extractionFallbacks: ["name"],
+		extractionFallbacks: ["name", "companies.0.name"],
 	},
 	{
 		label: "Website URL",
@@ -336,10 +345,22 @@ export function getRequiredFieldsForApolloPath(
 	return column?.requiredFields ?? [];
 }
 
+/** Map a column's legacy `requiredFields` to gateway `enrichFields` tokens. */
+export function getEnrichFieldsForApolloPath(
+	category: EnrichmentCategory,
+	apolloPath: string,
+): EnrichFieldToken[] | undefined {
+	return mapRequiredFieldsToEnrichFields(
+		getRequiredFieldsForApolloPath(category, apolloPath),
+	);
+}
+
 function computeLocation(payload: Record<string, unknown>): string | null {
 	const person = payload.person as Record<string, unknown> | undefined;
-	if (!person) return null;
-	const parts = [person.city, person.state, person.country].filter(Boolean);
+	const city = person?.city ?? payload.city;
+	const state = person?.state ?? payload.state;
+	const country = person?.country ?? payload.country;
+	const parts = [city, state, country].filter(Boolean);
 	return parts.length > 0 ? parts.join(", ") : null;
 }
 

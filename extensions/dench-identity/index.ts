@@ -2081,7 +2081,13 @@ export default function register(api: any) {
     typeof api.registerTool === "function" &&
     shouldRegisterIntegrationTools(workspaceDir)
   ) {
-    api.registerTool(createDenchSearchIntegrationsTool(api));
+    api.registerTool(createDenchSearchIntegrationsTool(api), {
+      name: DENCH_SEARCH_INTEGRATIONS_NAME,
+      optional: true,
+    });
+    api.logger?.info?.(
+      `[dench-identity] registered ${DENCH_SEARCH_INTEGRATIONS_NAME} integration tool`,
+    );
   }
 
   api.on(

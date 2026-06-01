@@ -311,6 +311,7 @@ describe("register", () => {
 
     expect(api.registerTool).toHaveBeenCalledWith(
       expect.objectContaining({ name: "dench_search_integrations" }),
+      { name: "dench_search_integrations", optional: true },
     );
     expect(getRegisteredTool(api as any, "dench_execute_integrations")).toBeUndefined();
 

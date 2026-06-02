@@ -74,6 +74,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
+    "esbuild": "0.27.3",
     "oxfmt": "0.34.0",
     "oxlint": "^1.49.0",
     "oxlint-tsgolint": "^0.14.2",

@@ -9,9 +9,7 @@ describe("DeprecationBanner", () => {
     render(<DeprecationBanner />);
 
     expect(screen.getByTestId("deprecation-banner")).toBeInTheDocument();
-    expect(
-      screen.getByText(/You can still use DenchClaw, but it won't receive updates/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/For the latest features, go to/i)).toBeInTheDocument();
 
     const cta = screen.getByTestId("deprecation-banner-cta");
     expect(cta).toHaveAttribute("href", "https://dench.com");

@@ -16,7 +16,7 @@ export function DeprecationBanner() {
         className="mx-auto max-w-6xl text-center text-[12.5px] leading-snug sm:text-[13px]"
         style={{ color: "var(--color-deprecation-muted)" }}
       >
-        You can still use DenchClaw, but it won&apos;t receive updates. for the latest features, go to{" "}
+        For the latest features, go to{" "}
         <a
           href={DENCH_URL}
           target="_blank"

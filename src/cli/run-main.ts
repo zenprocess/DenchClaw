@@ -11,11 +11,13 @@ import {
   getCommandPath,
   getPrimaryCommand,
   hasHelpOrVersion,
+  isBareInvocation,
   isLocalNamespace,
   stripLocalNamespace,
 } from "./argv.js";
 import { emitCliBanner } from "./banner.js";
 import { resolveCliName } from "./cli-name.js";
+import { runDenchComFunnel } from "./dench-funnel.js";
 import { normalizeWindowsArgv } from "./windows-argv.js";
 
 /**
@@ -220,10 +222,19 @@ export async function runCli(argv: string[] = process.argv) {
   const normalizedArgv = normalizeWindowsArgv(argv);
 
   // Only the `local` namespace is active today; every other top-level
-  // `denchclaw <anything>` (including bare `denchclaw`, `--help`, `--version`)
-  // is reserved for future use and is a silent no-op (no output, exit 0).
-  // A literal `openclaw` invocation keeps its legacy behavior.
+  // `denchclaw <anything>` is handled here. A literal `openclaw` invocation
+  // keeps its legacy behavior and falls through to the pipeline.
   if (resolveCliName(normalizedArgv) !== "openclaw" && !isLocalNamespace(normalizedArgv)) {
+    // A truly bare `denchclaw` (no command, no flags) becomes the dench.com
+    // marketing funnel: show the banner + yes/no prompt, then open
+    // dench.com/login on "yes" or exit cleanly on "no". Non-interactive
+    // contexts (no TTY, piped, CI, `--json`) exit silently inside the funnel.
+    if (isBareInvocation(normalizedArgv)) {
+      await runDenchComFunnel(normalizedArgv);
+      return;
+    }
+    // Any other top-level `denchclaw <anything>` (`--help`, `--version`,
+    // `denchclaw foo`, …) is reserved for future use and is a silent no-op.
     return;
   }
   const localArgv = stripLocalNamespace(normalizedArgv);

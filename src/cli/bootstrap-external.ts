@@ -3457,12 +3457,20 @@ export async function bootstrapCommand(
 
   preCloudSpinner?.stop("Gateway ready.");
 
-  const denchCloudSelection = await resolveDenchCloudBootstrapSelection({
-    opts,
-    nonInteractive,
-    stateDir,
-    runtime,
-  });
+  // Dench Cloud onboarding now lives in the standalone dench.com funnel shown on
+  // a bare `npx denchclaw`. The local bootstrap flow (`denchclaw local`) never
+  // configures Dench Cloud — it skips the recommendation banner, the yes/no
+  // question, and the API-key prompt entirely, even with explicit flags/env.
+  // Restore the call below (or flip this flag) once the backend funnel is ready.
+  const DENCH_CLOUD_LOCAL_BOOTSTRAP_DISABLED: boolean = true;
+  const denchCloudSelection: DenchCloudBootstrapSelection = DENCH_CLOUD_LOCAL_BOOTSTRAP_DISABLED
+    ? { enabled: false }
+    : await resolveDenchCloudBootstrapSelection({
+        opts,
+        nonInteractive,
+        stateDir,
+        runtime,
+      });
 
   const packageRoot = resolveCliPackageRoot();
   const managedBundledPlugins: BundledPluginSpec[] = [

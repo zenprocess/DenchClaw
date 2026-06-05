@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { isLocalNamespace, stripLocalNamespace } from "./argv.js";
 import {
   rewriteBareArgvToBootstrap,
   shouldHideCliBanner,
@@ -106,5 +107,34 @@ describe("run-main banner visibility", () => {
     expect(shouldHideCliBanner(["node", "denchclaw", "completion"])).toBe(true);
     expect(shouldHideCliBanner(["node", "denchclaw", "plugins", "update"])).toBe(true);
     expect(shouldHideCliBanner(["node", "denchclaw", "chat"])).toBe(false);
+  });
+});
+
+describe("run-main local namespace gating", () => {
+  // runCli only proceeds for `openclaw` invocations or when the `local`
+  // namespace is present; everything else top-level is a silent no-op.
+  it("treats top-level non-local denchclaw argv as outside the local namespace", () => {
+    expect(isLocalNamespace(["node", "denchclaw"])).toBe(false);
+    expect(isLocalNamespace(["node", "denchclaw", "--help"])).toBe(false);
+    expect(isLocalNamespace(["node", "denchclaw", "--version"])).toBe(false);
+    expect(isLocalNamespace(["node", "denchclaw", "-v"])).toBe(false);
+    expect(isLocalNamespace(["node", "denchclaw", "chat"])).toBe(false);
+  });
+
+  it("feeds the existing pipeline guards the post-strip argv shapes", () => {
+    // `denchclaw local` -> bootstrap after rewrite.
+    expect(rewriteBareArgvToBootstrap(stripLocalNamespace(["node", "denchclaw", "local"]), {})).toEqual(
+      ["node", "denchclaw", "bootstrap"],
+    );
+    // `denchclaw local sessions` -> delegates to OpenClaw post-strip.
+    expect(shouldDelegateToGlobalOpenClaw(stripLocalNamespace(["node", "denchclaw", "local", "sessions"]))).toBe(
+      true,
+    );
+    // `denchclaw local update` -> core command, never delegated.
+    expect(shouldDelegateToGlobalOpenClaw(stripLocalNamespace(["node", "denchclaw", "local", "update"]))).toBe(
+      false,
+    );
+    // Banner stays visible for `denchclaw local` (bootstrap) post-strip.
+    expect(shouldHideCliBanner(stripLocalNamespace(["node", "denchclaw", "local"]))).toBe(false);
   });
 });

@@ -7,7 +7,13 @@ import { isMainModule } from "../infra/is-main.js";
 import { ensureOpenClawCliOnPath } from "../infra/path-env.js";
 import { assertSupportedRuntime } from "../infra/runtime-guard.js";
 import { VERSION } from "../version.js";
-import { getCommandPath, getPrimaryCommand, hasHelpOrVersion } from "./argv.js";
+import {
+  getCommandPath,
+  getPrimaryCommand,
+  hasHelpOrVersion,
+  isLocalNamespace,
+  stripLocalNamespace,
+} from "./argv.js";
 import { emitCliBanner } from "./banner.js";
 import { resolveCliName } from "./cli-name.js";
 import { normalizeWindowsArgv } from "./windows-argv.js";
@@ -212,22 +218,33 @@ async function delegateToGlobalOpenClaw(argv: string[]): Promise<number> {
 
 export async function runCli(argv: string[] = process.argv) {
   const normalizedArgv = normalizeWindowsArgv(argv);
+
+  // Only the `local` namespace is active today; every other top-level
+  // `denchclaw <anything>` (including bare `denchclaw`, `--help`, `--version`)
+  // is reserved for future use and is a silent no-op (no output, exit 0).
+  // A literal `openclaw` invocation keeps its legacy behavior.
+  if (resolveCliName(normalizedArgv) !== "openclaw" && !isLocalNamespace(normalizedArgv)) {
+    return;
+  }
+  const localArgv = stripLocalNamespace(normalizedArgv);
+
   normalizeEnv();
-  if (shouldEnsureCliPath(normalizedArgv)) {
+  if (shouldEnsureCliPath(localArgv)) {
     ensureOpenClawCliOnPath();
   }
 
   // Enforce the minimum supported runtime before doing any work.
   assertSupportedRuntime();
 
-  // Show the animated DenchClaw banner early so it appears for ALL invocations
-  // (bare `denchclaw`, subcommands, help, etc.). The bannerEmitted flag inside
-  // emitCliBanner prevents double-emission from the route / preAction hooks.
-  if (!shouldHideCliBanner(normalizedArgv, process.env)) {
-    await emitCliBanner(VERSION, { argv: normalizedArgv });
+  // Show the animated DenchClaw banner early so it appears for ALL `local`
+  // invocations (bare `denchclaw local`, subcommands, help, etc.). The
+  // bannerEmitted flag inside emitCliBanner prevents double-emission from the
+  // route / preAction hooks.
+  if (!shouldHideCliBanner(localArgv, process.env)) {
+    await emitCliBanner(VERSION, { argv: localArgv });
   }
 
-  const parseArgv = rewriteBareArgvToBootstrap(rewriteUpdateFlagArgv(normalizedArgv));
+  const parseArgv = rewriteBareArgvToBootstrap(rewriteUpdateFlagArgv(localArgv));
   if (shouldDelegateToGlobalOpenClaw(parseArgv)) {
     const exitCode = await delegateToGlobalOpenClaw(parseArgv);
     process.exitCode = exitCode;
@@ -235,7 +252,7 @@ export async function runCli(argv: string[] = process.argv) {
   }
 
   const { buildProgram } = await import("./program.js");
-  const program = buildProgram();
+  const program = buildProgram(parseArgv);
   await program.parseAsync(parseArgv);
 }
 

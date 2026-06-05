@@ -145,6 +145,63 @@ export function getPrimaryCommand(argv: string[]): string | null {
   return primary ?? null;
 }
 
+export const LOCAL_NAMESPACE_TOKEN = "local";
+
+/**
+ * Finds the absolute index (into the full argv) of the first positional command
+ * token, skipping root flags in a value-aware manner (e.g. `--profile <value>`,
+ * `--profile=<value>`, boolean root flags, and `-`-prefixed flags). Stops at the
+ * `--` terminator. Returns `null` when there is no positional token.
+ */
+export function findFirstCommandIndex(argv: string[]): number | null {
+  const args = argv.slice(2);
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (!arg) {
+      continue;
+    }
+    if (arg === FLAG_TERMINATOR) {
+      return null;
+    }
+    if (arg.startsWith("--profile=")) {
+      continue;
+    }
+    if (ROOT_VALUE_FLAGS.has(arg)) {
+      const next = args[i + 1];
+      if (isValueToken(next)) {
+        i += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      continue;
+    }
+    return i + 2;
+  }
+  return null;
+}
+
+/**
+ * True when the first positional command token is the `local` namespace token.
+ */
+export function isLocalNamespace(argv: string[]): boolean {
+  const index = findFirstCommandIndex(argv);
+  return index !== null && argv[index] === LOCAL_NAMESPACE_TOKEN;
+}
+
+/**
+ * Removes a single leading `local` namespace token from argv, preserving any
+ * root flags that appeared before it. Returns argv unchanged when the first
+ * positional token is not `local`.
+ */
+export function stripLocalNamespace(argv: string[]): string[] {
+  const index = findFirstCommandIndex(argv);
+  if (index === null || argv[index] !== LOCAL_NAMESPACE_TOKEN) {
+    return argv;
+  }
+  return [...argv.slice(0, index), ...argv.slice(index + 1)];
+}
+
 export function buildParseArgv(params: {
   programName?: string;
   rawArgs?: string[];

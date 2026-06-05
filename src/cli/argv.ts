@@ -145,6 +145,16 @@ export function getPrimaryCommand(argv: string[]): string | null {
   return primary ?? null;
 }
 
+/**
+ * True for a truly bare invocation: no positional command token and no flags at
+ * all (e.g. plain `denchclaw`). `denchclaw --help`, `denchclaw -v`, and
+ * `denchclaw foo` are NOT bare. Used to gate the top-level dench.com funnel so
+ * it never fires for flagged or non-interactive (`--json`) invocations.
+ */
+export function isBareInvocation(argv: string[]): boolean {
+  return argv.slice(2).every((arg) => !arg || arg.trim() === "");
+}
+
 export const LOCAL_NAMESPACE_TOKEN = "local";
 
 /**

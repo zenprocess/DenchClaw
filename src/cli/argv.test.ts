@@ -8,6 +8,7 @@ import {
   getPrimaryCommand,
   hasHelpOrVersion,
   hasRootVersionAlias,
+  isBareInvocation,
   isLocalNamespace,
   shouldMigrateState,
   shouldMigrateStateFromPath,
@@ -154,5 +155,15 @@ describe("local namespace helpers", () => {
       "--",
       "local",
     ]);
+  });
+
+  it("detects a truly bare invocation with no command tokens or flags", () => {
+    expect(isBareInvocation(["node", "denchclaw"])).toBe(true);
+    expect(isBareInvocation(["node", "denchclaw", ""])).toBe(true);
+    expect(isBareInvocation(["node", "denchclaw", "   "])).toBe(true);
+    expect(isBareInvocation(["node", "denchclaw", "--help"])).toBe(false);
+    expect(isBareInvocation(["node", "denchclaw", "--json"])).toBe(false);
+    expect(isBareInvocation(["node", "denchclaw", "local"])).toBe(false);
+    expect(isBareInvocation(["node", "denchclaw", "foobar"])).toBe(false);
   });
 });

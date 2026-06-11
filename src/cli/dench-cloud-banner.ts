@@ -26,8 +26,8 @@ export function renderDenchCloudRecommendationBanner(): string {
     ? gradient(["#38BDF8", "#2DD4BF", "#34D399"])("D E N C H   C L O U D")
     : "D E N C H   C L O U D";
   const subtitle = rich
-    ? theme.muted("The recommended way to run DenchClaw. Everything is managed for you.")
-    : "The recommended way to run DenchClaw. Everything is managed for you.";
+    ? theme.muted("The Ultimate CRM for your AI Agents.")
+    : "The Ultimate CRM for your AI Agents.";
 
   const bullet = rich ? theme.info("▸") : "▸";
   const lbl = (s: string) => (rich ? theme.accentBright(s) : s);
@@ -35,8 +35,10 @@ export function renderDenchCloudRecommendationBanner(): string {
   const COL = 14;
   const features: [string, string][] = [
     [lbl("AI Models"), dim("Claude, GPT, Kimi & more — no API keys needed")],
-    [lbl("Voice"), dim("ElevenLabs built in — no account required")],
-    [lbl("Web Search"), dim("Exa ready out of the box — no key to manage")],
+    [lbl("CRM"), dim("Custom objects, companies, people, etc.")],
+    [lbl("Files"), dim("File Storage on Cloud")],
+    [lbl("24x7"), dim("Cron jobs that run in the background")],
+    [lbl("Web Search"), dim("Ready out of the box — no keys to manage")],
     [lbl("Skills Store"), dim("Browse & install skills instantly")],
     [lbl("Image Gen"), dim("State-of-the-art models from day one")],
   ];
@@ -59,7 +61,6 @@ export function renderDenchCloudRecommendationBanner(): string {
   ].join(dot);
 
   const check = rich ? theme.success("✓") : "✓";
-  const cta = rich ? theme.success("Recommended for most users") : "Recommended for most users";
 
   return [
     "",
@@ -72,8 +73,6 @@ export function renderDenchCloudRecommendationBanner(): string {
     blank,
     row(`${star}  ${intTitle}`),
     row(apps, 7),
-    blank,
-    row(`${check}  ${cta}`),
     blank,
     bot,
     "",

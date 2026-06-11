@@ -55,7 +55,10 @@ export function shouldEnsureCliPath(argv: string[]): boolean {
   if (primary === "config" && (secondary === "get" || secondary === "unset")) {
     return false;
   }
-  if (primary === "models" && (secondary === "list" || secondary === "status")) {
+  if (
+    primary === "models" &&
+    (secondary === "list" || secondary === "status")
+  ) {
     return false;
   }
   return true;
@@ -99,7 +102,10 @@ export function shouldDelegateToGlobalOpenClaw(
   );
 }
 
-export function shouldHideCliBanner(argv: string[], env: NodeJS.ProcessEnv = process.env): boolean {
+export function shouldHideCliBanner(
+  argv: string[],
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
   const commandPath = getCommandPath(argv, 2);
   return (
     isTruthyEnvValue(env.DENCHCLAW_HIDE_BANNER) ||
@@ -128,7 +134,9 @@ async function delegateToGlobalOpenClaw(argv: string[]): Promise<number> {
         DENCHCLAW_DELEGATED: "1",
         OPENCLAW_DELEGATED: "1",
       },
-      ...(process.platform === "win32" ? { shell: true, windowsHide: true } : {}),
+      ...(process.platform === "win32"
+        ? { shell: true, windowsHide: true }
+        : {}),
     });
 
     child.once("error", (error) => {
@@ -174,16 +182,16 @@ export async function runCli(argv: string[] = process.argv) {
     await emitCliBanner(VERSION, { argv: normalizedArgv });
   }
 
+  const parseArgv = rewriteUpdateFlagArgv(normalizedArgv);
+
   // Bare `denchclaw` gets a minimal welcome flow: the Dench Cloud banner plus
   // a single "Continue with Dench.com" action. The full local setup pipeline
   // is reachable explicitly via `denchclaw bootstrap`.
-  if (isBareDenchclawInvocation(normalizedArgv)) {
+  if (isBareDenchclawInvocation(parseArgv)) {
     const { runDenchCloudWelcome } = await import("./dench-cloud-welcome.js");
     await runDenchCloudWelcome();
     return;
   }
-
-  const parseArgv = rewriteUpdateFlagArgv(normalizedArgv);
   if (shouldDelegateToGlobalOpenClaw(parseArgv)) {
     const exitCode = await delegateToGlobalOpenClaw(parseArgv);
     process.exitCode = exitCode;

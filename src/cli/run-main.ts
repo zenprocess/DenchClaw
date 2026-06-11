@@ -61,67 +61,14 @@ export function shouldEnsureCliPath(argv: string[]): boolean {
   return true;
 }
 
-export type BootstrapRolloutStage = "legacy" | "internal" | "beta" | "default";
-
-function normalizeBootstrapRolloutStage(
-  value: string | undefined,
-): BootstrapRolloutStage | undefined {
-  const normalized = value?.trim().toLowerCase();
-  if (
-    normalized === "legacy" ||
-    normalized === "internal" ||
-    normalized === "beta" ||
-    normalized === "default"
-  ) {
-    return normalized;
-  }
-  return undefined;
-}
-
-export function resolveBootstrapRolloutStage(
-  env: NodeJS.ProcessEnv = process.env,
-): BootstrapRolloutStage {
-  const raw = env.DENCHCLAW_BOOTSTRAP_ROLLOUT ?? env.OPENCLAW_BOOTSTRAP_ROLLOUT;
-  return normalizeBootstrapRolloutStage(raw) ?? "default";
-}
-
-export function shouldEnableBootstrapCutover(env: NodeJS.ProcessEnv = process.env): boolean {
-  if (
-    isTruthyEnvValue(env.DENCHCLAW_BOOTSTRAP_LEGACY_FALLBACK) ||
-    isTruthyEnvValue(env.OPENCLAW_BOOTSTRAP_LEGACY_FALLBACK)
-  ) {
-    return false;
-  }
-  const stage = resolveBootstrapRolloutStage(env);
-  if (stage === "legacy") {
-    return false;
-  }
-  if (stage === "beta") {
-    return (
-      isTruthyEnvValue(env.DENCHCLAW_BOOTSTRAP_BETA_OPT_IN) ||
-      isTruthyEnvValue(env.OPENCLAW_BOOTSTRAP_BETA_OPT_IN)
-    );
-  }
-  return true;
-}
-
-export function rewriteBareArgvToBootstrap(
-  argv: string[],
-  env: NodeJS.ProcessEnv = process.env,
-): string[] {
+export function isBareDenchclawInvocation(argv: string[]): boolean {
   if (hasHelpOrVersion(argv)) {
-    return argv;
+    return false;
   }
   if (getPrimaryCommand(argv)) {
-    return argv;
+    return false;
   }
-  if (resolveCliName(argv) !== "denchclaw") {
-    return argv;
-  }
-  if (!shouldEnableBootstrapCutover(env)) {
-    return argv;
-  }
-  return [...argv.slice(0, 2), "bootstrap", ...argv.slice(2)];
+  return resolveCliName(argv) === "denchclaw";
 }
 
 function isDelegationDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
@@ -227,7 +174,16 @@ export async function runCli(argv: string[] = process.argv) {
     await emitCliBanner(VERSION, { argv: normalizedArgv });
   }
 
-  const parseArgv = rewriteBareArgvToBootstrap(rewriteUpdateFlagArgv(normalizedArgv));
+  // Bare `denchclaw` gets a minimal welcome flow: the Dench Cloud banner plus
+  // a single "Continue with Dench.com" action. The full local setup pipeline
+  // is reachable explicitly via `denchclaw bootstrap`.
+  if (isBareDenchclawInvocation(normalizedArgv)) {
+    const { runDenchCloudWelcome } = await import("./dench-cloud-welcome.js");
+    await runDenchCloudWelcome();
+    return;
+  }
+
+  const parseArgv = rewriteUpdateFlagArgv(normalizedArgv);
   if (shouldDelegateToGlobalOpenClaw(parseArgv)) {
     const exitCode = await delegateToGlobalOpenClaw(parseArgv);
     process.exitCode = exitCode;

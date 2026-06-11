@@ -31,7 +31,7 @@
 ### Are you an AI agent reading this? In that case, use the prompt below to setup DenchClaw.
 
 ```
-Install DenchClaw (an OpenClaw CRM Framwork) by running "npx denchclaw", when it asks to update OpenClaw, update it as DenchClaw requires up to date OpenClaw. When it asks for my Dench API Key, help me fetch it from dench.com/api and set it up. Remember that DenchClaw creates a new OpenClaw Gateway (~/.openclaw-dench) on port 19001 by default, and a new main agent in that gateway working in ~/.openclaw-dench/workspace directory (Separate from the usual non-DenchClaw OpenClaw gateway that usually sits in ~/.openclaw). All DenchClaw config sits in ~/.openclaw-dench/openclaw.json. Remember that anytime you interface with DenchClaw using openclaw commands, you must use "openclaw --profile dench" as a prefix, for example, to restart gateway, run "openclaw --profile dench gateway restart". After everything is setup, DenchClaw will be accessible at localhost:3100 by default. If for some reason that Port 19001 and 3100 or those ranges are taken, make sure to kill those ports/processes and then retry npx denchclaw. Also, sometimes if the Web UI on port 3100 crashes, just run "npx denchclaw update" to boot it back up. Remember to refer to https://github.com/DenchHQ/DenchClaw (DenchClaw's official GitHub Repository) for more information.
+Install DenchClaw (an OpenClaw CRM Framwork) by running "npx denchclaw bootstrap", when it asks to update OpenClaw, update it as DenchClaw requires up to date OpenClaw. When it asks for my Dench API Key, help me fetch it from dench.com/api and set it up. Remember that DenchClaw creates a new OpenClaw Gateway (~/.openclaw-dench) on port 19001 by default, and a new main agent in that gateway working in ~/.openclaw-dench/workspace directory (Separate from the usual non-DenchClaw OpenClaw gateway that usually sits in ~/.openclaw). All DenchClaw config sits in ~/.openclaw-dench/openclaw.json. Remember that anytime you interface with DenchClaw using openclaw commands, you must use "openclaw --profile dench" as a prefix, for example, to restart gateway, run "openclaw --profile dench gateway restart". After everything is setup, DenchClaw will be accessible at localhost:3100 by default. If for some reason that Port 19001 and 3100 or those ranges are taken, make sure to kill those ports/processes and then retry npx denchclaw bootstrap. Also, sometimes if the Web UI on port 3100 crashes, just run "npx denchclaw update" to boot it back up. Remember to refer to https://github.com/DenchHQ/DenchClaw (DenchClaw's official GitHub Repository) for more information.
 ```
 
 ### Manual Install
@@ -39,7 +39,7 @@ Install DenchClaw (an OpenClaw CRM Framwork) by running "npx denchclaw", when it
 **Node 22+ required.**
 
 ```bash
-npx denchclaw@latest
+npx denchclaw@latest bootstrap
 ```
 
 Opens at `localhost:3100` after completing onboarding wizard.
@@ -49,7 +49,7 @@ Opens at `localhost:3100` after completing onboarding wizard.
 ## Commands
 
 ```bash
-npx denchclaw@latest # runs onboarding again for openclaw --profile dench
+npx denchclaw@latest bootstrap # runs onboarding again for openclaw --profile dench
 npx denchclaw@latest update # updates denchclaw web-runtime with current settings as is
 npx denchclaw restart # restarts denchclaw web server
 npx denchclaw start # starts denchclaw web server
@@ -82,7 +82,7 @@ openclaw --profile dench gateway --port 19001
 Alternatively, pass `--skip-daemon-install` to individual commands:
 
 ```bash
-npx denchclaw --skip-daemon-install
+npx denchclaw bootstrap --skip-daemon-install
 npx denchclaw update --skip-daemon-install
 npx denchclaw start --skip-daemon-install
 ```

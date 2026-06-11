@@ -1,49 +1,28 @@
 import { describe, it, expect } from "vitest";
 import {
-  rewriteBareArgvToBootstrap,
+  isBareDenchclawInvocation,
   shouldHideCliBanner,
-  shouldEnableBootstrapCutover,
   shouldEnsureCliPath,
   shouldDelegateToGlobalOpenClaw,
 } from "./run-main.js";
 
-describe("run-main bootstrap cutover", () => {
-  it("rewrites bare denchclaw invocations to bootstrap by default", () => {
-    const argv = ["node", "denchclaw"];
-    expect(rewriteBareArgvToBootstrap(argv, {})).toEqual(["node", "denchclaw", "bootstrap"]);
+describe("run-main bare invocation welcome flow", () => {
+  it("detects bare denchclaw invocations", () => {
+    expect(isBareDenchclawInvocation(["node", "denchclaw"])).toBe(true);
   });
 
-  it("does not rewrite when a command already exists", () => {
-    const argv = ["node", "denchclaw", "chat"];
-    expect(rewriteBareArgvToBootstrap(argv, {})).toEqual(argv);
+  it("does not treat subcommand invocations as bare", () => {
+    expect(isBareDenchclawInvocation(["node", "denchclaw", "bootstrap"])).toBe(false);
+    expect(isBareDenchclawInvocation(["node", "denchclaw", "chat"])).toBe(false);
   });
 
-  it("does not rewrite non-denchclaw CLIs", () => {
-    const argv = ["node", "openclaw"];
-    expect(rewriteBareArgvToBootstrap(argv, {})).toEqual(argv);
+  it("does not treat help/version invocations as bare", () => {
+    expect(isBareDenchclawInvocation(["node", "denchclaw", "--help"])).toBe(false);
+    expect(isBareDenchclawInvocation(["node", "denchclaw", "--version"])).toBe(false);
   });
 
-  it("disables cutover in legacy rollout stage", () => {
-    const env = { DENCHCLAW_BOOTSTRAP_ROLLOUT: "legacy" };
-    expect(shouldEnableBootstrapCutover(env)).toBe(false);
-    expect(rewriteBareArgvToBootstrap(["node", "denchclaw"], env)).toEqual(["node", "denchclaw"]);
-  });
-
-  it("requires opt-in for beta rollout stage", () => {
-    const envNoOptIn = { DENCHCLAW_BOOTSTRAP_ROLLOUT: "beta" };
-    const envOptIn = {
-      DENCHCLAW_BOOTSTRAP_ROLLOUT: "beta",
-      DENCHCLAW_BOOTSTRAP_BETA_OPT_IN: "1",
-    };
-
-    expect(shouldEnableBootstrapCutover(envNoOptIn)).toBe(false);
-    expect(shouldEnableBootstrapCutover(envOptIn)).toBe(true);
-  });
-
-  it("honors explicit legacy fallback override", () => {
-    const env = { DENCHCLAW_BOOTSTRAP_LEGACY_FALLBACK: "1" };
-    expect(shouldEnableBootstrapCutover(env)).toBe(false);
-    expect(rewriteBareArgvToBootstrap(["node", "denchclaw"], env)).toEqual(["node", "denchclaw"]);
+  it("does not treat non-denchclaw CLIs as bare", () => {
+    expect(isBareDenchclawInvocation(["node", "openclaw"])).toBe(false);
   });
 });
 

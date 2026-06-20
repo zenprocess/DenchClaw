@@ -29,13 +29,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Forward session identity to route handlers via request headers so they
-  // don't need to re-verify the cookie.
-  const response = NextResponse.next();
-  response.headers.set("x-user-id", session.userId);
-  response.headers.set("x-user-role", session.role);
-  response.headers.set("x-workspace-name", session.workspaceName);
-  return response;
+  // Forward session identity to route handlers via the REQUEST headers so
+  // getSessionFromHeaders(request.headers) can read them. Setting them on the
+  // response would only expose them to the browser, never to the handlers —
+  // which would make every authenticated request 401. (Classic Next.js trap.)
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-user-id", session.userId);
+  requestHeaders.set("x-user-role", session.role);
+  requestHeaders.set("x-workspace-name", session.workspaceName);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {

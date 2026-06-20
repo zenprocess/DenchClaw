@@ -6,6 +6,7 @@ import {
   setUIActiveWorkspace,
 } from "@/lib/workspace";
 import { trackServer } from "@/lib/telemetry";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,6 +28,14 @@ function normalizeWorkspaceName(raw: unknown): string | null {
 }
 
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Deleting a workspace is destructive and admin-only.
+  if (session.role !== "admin") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
   const body = (await req.json().catch(() => ({}))) as { workspace?: unknown; profile?: unknown };
   const workspaceName = normalizeWorkspaceName(body.workspace ?? body.profile);
   if (!workspaceName) {

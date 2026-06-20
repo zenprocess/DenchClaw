@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { NextRequest } from "next/server";
 import { discoverWorkspaces, getActiveWorkspaceName } from "@/lib/workspace";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -39,12 +41,24 @@ function readGatewayMeta(stateDir: string): GatewayMeta | null {
   return null;
 }
 
-export async function GET() {
-  const workspaces = discoverWorkspaces().map((workspace) => ({
+export async function GET(req: NextRequest) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const all = discoverWorkspaces().map((workspace) => ({
     ...workspace,
     gateway: readGatewayMeta(workspace.stateDir),
   }));
-  const activeWorkspace = getActiveWorkspaceName() ?? workspaces.find((item) => item.isActive)?.name ?? null;
+  // Per-user isolation: non-admins only see their own workspace.
+  const workspaces =
+    session.role === "admin"
+      ? all
+      : all.filter((item) => item.name === session.workspaceName);
+  const activeWorkspace =
+    session.role === "admin"
+      ? getActiveWorkspaceName() ?? workspaces.find((item) => item.isActive)?.name ?? null
+      : session.workspaceName;
 
   return Response.json({
     workspaces,

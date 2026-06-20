@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 // Mock node:fs
 vi.mock("node:fs", () => ({
@@ -34,9 +35,17 @@ describe("Sessions, Memories & Skills API", () => {
   // ─── GET /api/sessions ──────────────────────────────────────────
 
   describe("GET /api/sessions", () => {
+    const adminRequest = new Request("http://localhost", {
+      headers: {
+        "x-user-id": "u1",
+        "x-user-role": "admin",
+        "x-workspace-name": "test",
+      },
+    });
+
     it("returns empty agents and sessions when no dir exists", async () => {
       const { GET } = await import("./route.js");
-      const res = await GET();
+      const res = await GET(adminRequest as unknown as NextRequest);
       const json = await res.json();
       expect(json.agents).toEqual([]);
       expect(json.sessions).toEqual([]);
@@ -57,7 +66,7 @@ describe("Sessions, Memories & Skills API", () => {
       vi.mocked(mockReadFile).mockReturnValue(JSON.stringify(sessionsData) as never);
 
       const { GET } = await import("./route.js");
-      const res = await GET();
+      const res = await GET(adminRequest as unknown as NextRequest);
       const json = await res.json();
       expect(json.sessions.length).toBeGreaterThanOrEqual(0);
     });

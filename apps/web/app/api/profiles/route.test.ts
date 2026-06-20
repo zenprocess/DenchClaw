@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/workspace", () => ({
   discoverWorkspaces: vi.fn(() => []),
@@ -74,7 +75,10 @@ describe("profiles API", () => {
     });
 
     const { GET } = await import("./route.js");
-    const response = await GET();
+    const theRequest = new Request("http://localhost", {
+      headers: { "x-user-id": "u1", "x-user-role": "admin", "x-workspace-name": "test" },
+    });
+    const response = await GET(theRequest as unknown as NextRequest);
     expect(response.status).toBe(200);
     const json = await response.json();
 
@@ -118,7 +122,10 @@ describe("profiles API", () => {
     });
 
     const { GET } = await import("./route.js");
-    const response = await GET();
+    const theRequest = new Request("http://localhost", {
+      headers: { "x-user-id": "u1", "x-user-role": "admin", "x-workspace-name": "test" },
+    });
+    const response = await GET(theRequest as unknown as NextRequest);
     expect(response.status).toBe(200);
     const json = await response.json();
 

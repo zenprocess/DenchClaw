@@ -1,4 +1,6 @@
-export const DEFAULT_DENCH_CLOUD_GATEWAY_URL = "https://gateway.merseoriginals.com";
+const DENCH_CLOUD_FALLBACK_GATEWAY_URL = "https://gateway.merseoriginals.com";
+export const DEFAULT_DENCH_CLOUD_GATEWAY_URL =
+  process.env.COMPOSIO_BASE_URL?.trim() || DENCH_CLOUD_FALLBACK_GATEWAY_URL;
 
 export type DenchCloudCatalogCost = {
   input: number;
@@ -446,15 +448,30 @@ export type DenchCloudProviderConfig = {
 export type ComposioMcpServerConfig = {
   url: string;
   transport: "streamable-http";
-  headers: {
-    Authorization: string;
-  };
+  headers: Record<string, string>;
 };
 
+/**
+ * Builds the Composio MCP server config.
+ *
+ * When COMPOSIO_API_KEY is set (native mode), produces a direct Composio MCP URL
+ * (https://mcp.composio.dev/<key>) with x-composio-api-key authentication.
+ * Otherwise falls back to the Dench gateway path with Bearer auth.
+ */
 export function buildComposioMcpServerConfig(
   gatewayUrl: string,
   apiKey: string,
 ): ComposioMcpServerConfig {
+  const isNative = Boolean(process.env.COMPOSIO_API_KEY?.trim());
+  if (isNative) {
+    return {
+      url: `https://mcp.composio.dev/${apiKey}`,
+      transport: "streamable-http",
+      headers: {
+        "x-composio-api-key": apiKey,
+      },
+    };
+  }
   return {
     url: `${gatewayUrl}/v1/composio/mcp`,
     transport: "streamable-http",
@@ -462,6 +479,18 @@ export function buildComposioMcpServerConfig(
       Authorization: `Bearer ${apiKey}`,
     },
   };
+}
+
+/**
+ * Resolves whether Composio features are available on the CLI side.
+ * Returns true when either COMPOSIO_API_KEY (native) or a Dench key is present.
+ */
+export function resolveComposioEligibility(): boolean {
+  return Boolean(
+    process.env.COMPOSIO_API_KEY?.trim() ||
+    process.env.DENCH_CLOUD_API_KEY?.trim() ||
+    process.env.DENCH_API_KEY?.trim(),
+  );
 }
 
 export function buildDenchCloudProviderConfig(params: {

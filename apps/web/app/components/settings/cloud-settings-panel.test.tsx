@@ -82,6 +82,7 @@ const integrationsState: IntegrationsState = {
     isPrimaryProvider: false,
     primaryModel: null,
   },
+  composio: { hasKey: false, mode: "none" },
   metadata: {
     schemaVersion: 1,
     exa: { ownsSearch: false, fallbackProvider: "duckduckgo" },

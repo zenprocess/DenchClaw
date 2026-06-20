@@ -46,7 +46,7 @@ export function IntegrationsPanel({ embedded }: { embedded?: boolean } = {}) {
               className="mt-1 text-sm"
               style={{ color: "var(--color-text-muted)" }}
             >
-              Connect third-party apps to your Dench Cloud workspace.
+              Connect third-party apps via your Composio API key.
             </p>
           </div>
           <a
@@ -90,14 +90,8 @@ export function IntegrationsPanel({ embedded }: { embedded?: boolean } = {}) {
 
       {!loading && !error && data && (
         <ComposioAppsSection
-          eligible={Boolean(data.denchCloud.hasKey && data.denchCloud.isPrimaryProvider)}
-          lockBadge={
-            !data.denchCloud.hasKey
-              ? "Get Dench Cloud API Key"
-              : !data.denchCloud.isPrimaryProvider
-                ? "Use Dench Cloud"
-                : null
-          }
+          eligible={Boolean(data.composio?.hasKey)}
+          lockBadge={!data.composio?.hasKey ? "Add Composio API Key" : null}
         />
       )}
     </div>

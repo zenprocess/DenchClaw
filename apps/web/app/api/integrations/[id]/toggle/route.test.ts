@@ -231,6 +231,7 @@ describe("integrations toggle API", () => {
           isPrimaryProvider: false,
           primaryModel: "anthropic/claude-4",
         },
+        composio: { hasKey: false, mode: "none" as const },
         metadata: { schemaVersion: 1, exa: { ownsSearch: false, fallbackProvider: "duckduckgo" } },
         search: {
           builtIn: {

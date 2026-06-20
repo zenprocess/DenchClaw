@@ -182,6 +182,7 @@ describe("cloud settings API", () => {
           isPrimaryProvider: true,
           primaryModel: validState.primaryModel,
         },
+        composio: { hasKey: true, mode: "dench-cloud" as const },
         metadata: {
           schemaVersion: 1 as const,
           exa: { ownsSearch: true, fallbackProvider: "duckduckgo" },

@@ -11,6 +11,7 @@ const integrationsState: IntegrationsState = {
     isPrimaryProvider: true,
     primaryModel: "gpt-5.4",
   },
+  composio: { hasKey: false, mode: "none" },
   metadata: {
     schemaVersion: 1,
     exa: {},

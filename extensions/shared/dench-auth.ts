@@ -7,8 +7,16 @@ const AUTH_PROFILES_REL = path.join("agents", "main", "agent", "auth-profiles.js
 /**
  * Read the Dench Cloud API key from the single source of truth
  * (`auth-profiles.json`), falling back to environment variables.
+ *
+ * Resolution order:
+ *   1. COMPOSIO_API_KEY env var (native Composio key — preferred)
+ *   2. auth-profiles.json dench-cloud:default profile key
+ *   3. DENCH_CLOUD_API_KEY / DENCH_API_KEY env vars
  */
 export function readDenchAuthProfileKey(): string | undefined {
+  const composioKey = process.env.COMPOSIO_API_KEY?.trim();
+  if (composioKey) return composioKey;
+
   const stateDir = process.env.OPENCLAW_STATE_DIR;
   if (stateDir) {
     const key = readKeyFromAuthProfiles(path.join(stateDir, AUTH_PROFILES_REL));

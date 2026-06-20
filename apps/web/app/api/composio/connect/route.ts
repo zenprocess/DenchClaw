@@ -2,7 +2,6 @@ import {
   fetchComposioConnections,
   initiateComposioConnect,
   resolveComposioApiKey,
-  resolveComposioEligibility,
   resolveComposioGatewayUrl,
 } from "@/lib/composio";
 import {
@@ -19,6 +18,9 @@ import {
 import { resolveComposioConnectToolkitSlug } from "@/lib/composio-normalization";
 import { resolveAppPublicOrigin } from "@/lib/public-origin";
 import type { NormalizedComposioConnection } from "@/lib/composio";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -42,7 +44,10 @@ function syncToolkitFromConnection(
   return null;
 }
 
-function persistLocalSyncConnection(connection: NormalizedComposioConnection): void {
+function persistLocalSyncConnection(
+  connection: NormalizedComposioConnection,
+  workspaceName: string,
+): void {
   if (!connection.is_active) {
     return;
   }
@@ -58,35 +63,36 @@ function persistLocalSyncConnection(connection: NormalizedComposioConnection): v
     accountLabel: connection.display_label,
     connectedAt: new Date().toISOString(),
   };
-  writeConnection(toolkit, record);
+  writeConnection(toolkit, record, workspaceName);
 
-  const current = readOnboardingState();
+  const current = readOnboardingState(workspaceName);
   writeOnboardingState({
     ...current,
     connections: {
       ...current.connections,
       [toolkit]: record,
     },
-  });
+  }, workspaceName);
 }
 
 export async function POST(request: Request) {
+  const session = getSessionFromHeaders(request.headers);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { workspaceName, role } = session;
+
+  try {
+    requirePermission(role, "composio:write");
+  } catch (err) {
+    const e = err as Error & { status?: number };
+    return NextResponse.json({ error: e.message }, { status: e.status ?? 403 });
+  }
+
   const apiKey = resolveComposioApiKey();
   if (!apiKey) {
     return Response.json(
-      { error: "Dench Cloud API key is required." },
-      { status: 403 },
-    );
-  }
-
-  const eligibility = resolveComposioEligibility();
-  if (!eligibility.eligible) {
-    return Response.json(
-      {
-        error: "Dench Cloud must be the primary provider.",
-        lockReason: eligibility.lockReason,
-        lockBadge: eligibility.lockBadge,
-      },
+      { error: "Composio API key is required." },
       { status: 403 },
     );
   }
@@ -118,7 +124,7 @@ export async function POST(request: Request) {
     ).find((connection) => connection.normalized_toolkit_slug === normalizedToolkit && connection.is_active);
 
     if (activeConnection) {
-      persistLocalSyncConnection(activeConnection);
+      persistLocalSyncConnection(activeConnection, workspaceName);
       return Response.json({
         already_connected: true,
         connection_id: activeConnection.id,

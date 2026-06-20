@@ -1,7 +1,9 @@
 import { writeFileSync, mkdirSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { resolveWorkspaceRoot, safeResolveNewPath } from "@/lib/workspace";
+import { join, dirname, resolve } from "node:path";
+import { resolveWorkspaceDirForName } from "@/lib/workspace";
 import { trackServer } from "@/lib/telemetry";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,12 +13,28 @@ const MAX_SIZE = 25 * 1024 * 1024; // 25 MB
 /**
  * POST /api/workspace/upload
  * Accepts multipart form data with a "file" field.
- * Saves to assets/<timestamp>-<filename> inside the workspace.
+ * Saves to assets/<timestamp>-<filename> inside the session's workspace.
  * Returns { ok, path } where path is workspace-relative.
  */
 export async function POST(req: Request) {
-  const root = resolveWorkspaceRoot();
-  if (!root) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Resolve the workspace root scoped to the authenticated user's workspace.
+  // Admins upload to their own workspace (session.workspaceName); cross-workspace
+  // uploads are not supported through this endpoint.
+  let root: string;
+  try {
+    root = resolve(resolveWorkspaceDirForName(session.workspaceName));
+  } catch {
     return Response.json(
       { error: "Workspace not found" },
       { status: 500 },
@@ -52,8 +70,9 @@ export async function POST(req: Request) {
     .replace(/_{2,}/g, "_");
   const relPath = join("assets", `${Date.now()}-${safeName}`);
 
-  const absPath = safeResolveNewPath(relPath);
-  if (!absPath) {
+  // Validate that the resolved absolute path stays within the workspace root.
+  const absPath = resolve(root, relPath);
+  if (!absPath.startsWith(root + "/")) {
     return Response.json(
       { error: "Invalid path" },
       { status: 400 },

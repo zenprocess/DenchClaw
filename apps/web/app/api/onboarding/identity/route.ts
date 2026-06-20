@@ -4,6 +4,8 @@ import {
   writeOnboardingState,
 } from "@/lib/denchclaw-state";
 import { trackServer, writePersonInfo } from "@/lib/telemetry";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,12 +36,21 @@ function isPlausibleEmail(email: string): boolean {
   return true;
 }
 
-export async function GET() {
-  const state = readOnboardingState();
+export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const state = readOnboardingState(session.workspaceName);
   return Response.json(state.identity ?? null);
 }
 
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
   let body: { name?: unknown; email?: unknown };
   try {
     body = (await req.json()) as typeof body;
@@ -62,15 +73,15 @@ export async function POST(req: Request) {
   // collect if it had an identity step.
   writePersonInfo({ name, email });
 
-  const current = readOnboardingState();
+  const current = readOnboardingState(session.workspaceName);
   const identity = { name, email, capturedAt: new Date().toISOString() };
   if (current.currentStep === "identity") {
-    const next = advanceOnboardingStep("identity", "dench-cloud", { identity });
+    const next = advanceOnboardingStep("identity", "dench-cloud", { identity }, session.workspaceName);
     trackServer("onboarding_identity_captured", { has_email: true });
     return Response.json(next);
   }
 
   // User is editing identity from a later step — just save without advancing.
-  const next = writeOnboardingState({ ...current, identity });
+  const next = writeOnboardingState({ ...current, identity }, session.workspaceName);
   return Response.json(next);
 }

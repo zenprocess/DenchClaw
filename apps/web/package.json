@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.75",
+    "@node-rs/argon2": "^2.0.2",
     "@base-ui/react": "^1.2.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -60,6 +61,7 @@
     "framer-motion": "^12.34.0",
     "fuse.js": "^7.1.0",
     "html-to-docx": "^1.8.0",
+    "jose": "^5.9.6",
     "lucide-react": "^0.575.0",
     "mammoth": "^1.11.0",
     "monaco-editor": "^0.55.1",

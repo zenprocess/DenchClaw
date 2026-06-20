@@ -7,6 +7,8 @@ import {
 } from "@/lib/denchclaw-state";
 import { isSkillTemplateId } from "@/lib/skill-templates";
 import { trackServer } from "@/lib/telemetry";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,11 +19,20 @@ function isValidStep(value: unknown): value is OnboardingStep {
   return typeof value === "string" && VALID_STEPS.has(value as OnboardingStep);
 }
 
-export async function GET() {
-  return Response.json(readOnboardingState());
+export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  return Response.json(readOnboardingState(session.workspaceName));
 }
 
 export async function PUT(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
   let body: {
     from?: unknown;
     to?: unknown;
@@ -80,7 +91,7 @@ export async function PUT(req: Request) {
     };
   }
 
-  const next = advanceOnboardingStep(from, to, patch);
+  const next = advanceOnboardingStep(from, to, patch, session.workspaceName);
   trackServer("onboarding_step_advanced", {
     from,
     to,

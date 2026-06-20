@@ -1,5 +1,5 @@
 import { writeFileSync, mkdirSync, rmSync, statSync, existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import YAML from "yaml";
 import {
   readWorkspaceFile,
@@ -10,12 +10,33 @@ import {
   duckdbPathAsync,
   duckdbExecOnFileAsync,
   pivotViewIdentifier,
+  resolveWorkspaceDirForName,
 } from "@/lib/workspace";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+/**
+ * For non-admin sessions, verify that an absolute path is contained within
+ * the session's own workspace directory. Admins may access any path that
+ * passes the existing workspace/home guards.
+ */
+function assertWithinSessionWorkspace(
+  absolutePath: string,
+  workspaceName: string,
+): boolean {
+  const wsDir = resolve(resolveWorkspaceDirForName(workspaceName));
+  return absolutePath === wsDir || absolutePath.startsWith(wsDir + "/");
+}
+
 export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const path = url.searchParams.get("path");
 
@@ -24,6 +45,20 @@ export async function GET(req: Request) {
       { error: "Missing 'path' query parameter" },
       { status: 400 },
     );
+  }
+
+  // Scope non-admins to their own workspace by validating the resolved path.
+  if (session.role !== "admin") {
+    const resolved = resolveFilesystemPath(path);
+    if (
+      !resolved ||
+      !assertWithinSessionWorkspace(resolved.absolutePath, session.workspaceName)
+    ) {
+      return Response.json(
+        { error: "File not found or access denied" },
+        { status: 404 },
+      );
+    }
   }
 
   const file = readWorkspaceFile(path);
@@ -44,6 +79,17 @@ export async function GET(req: Request) {
  * Writes a file to the workspace. Creates parent directories as needed.
  */
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let body: { path?: string; content?: string };
   try {
     body = await req.json();
@@ -68,6 +114,17 @@ export async function POST(req: Request) {
   }
 
   if (!targetPath) {
+    return Response.json(
+      { error: "Invalid path or path traversal rejected" },
+      { status: 400 },
+    );
+  }
+
+  // Scope non-admins to their own workspace.
+  if (
+    session.role !== "admin" &&
+    !assertWithinSessionWorkspace(targetPath.absolutePath, session.workspaceName)
+  ) {
     return Response.json(
       { error: "Invalid path or path traversal rejected" },
       { status: 400 },
@@ -128,6 +185,17 @@ async function dropObjectPivotViewForDeletedFolder(absPath: string): Promise<{ o
  * System files (.object.yaml, workspace.duckdb, etc.) are protected.
  */
 export async function DELETE(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   let body: { path?: string };
   try {
     body = await req.json();
@@ -153,6 +221,17 @@ export async function DELETE(req: Request) {
 
   const absPath = targetPath?.absolutePath ?? safeResolvePath(relPath);
   if (!absPath) {
+    return Response.json(
+      { error: "File not found or path traversal rejected" },
+      { status: 404 },
+    );
+  }
+
+  // Scope non-admins to their own workspace.
+  if (
+    session.role !== "admin" &&
+    !assertWithinSessionWorkspace(absPath, session.workspaceName)
+  ) {
     return Response.json(
       { error: "File not found or path traversal rejected" },
       { status: 404 },

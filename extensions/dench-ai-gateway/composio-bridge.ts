@@ -57,12 +57,13 @@ function resolveGatewayBaseUrl(api: any, fallbackGatewayUrl: string): string {
 }
 
 function resolveApiKey(): string | undefined {
-  return readDenchAuthProfileKey() ?? undefined;
+  return process.env.COMPOSIO_API_KEY?.trim() || readDenchAuthProfileKey() || undefined;
 }
 
 function createDenchExecuteIntegrationsTool(params: {
-  gatewayBaseUrl: string;
-  authorization?: string;
+  baseUrl: string;
+  apiKey: string;
+  mode: "native" | "dench-cloud";
 }): AnyAgentTool {
   return {
     name: DENCH_EXECUTE_INTEGRATIONS_NAME,
@@ -83,12 +84,14 @@ function createDenchExecuteIntegrationsTool(params: {
       }
 
       try {
-        const res = await fetch(`${params.gatewayBaseUrl}/v1/composio/tools/execute`, {
+        const res = await fetch(`${params.baseUrl}/v1/composio/tools/execute`, {
           method: "POST",
           headers: {
             "content-type": "application/json",
             accept: "application/json",
-            ...(params.authorization ? { authorization: params.authorization } : {}),
+            ...(params.mode === "native"
+              ? { "x-composio-api-key": params.apiKey }
+              : { authorization: "Bearer " + params.apiKey }),
           },
           body: JSON.stringify({
             tool_slug: toolSlug,
@@ -185,17 +188,24 @@ function stripRuntimeComposioServer(api: any): void {
 }
 
 export function registerDenchIntegrationsBridge(api: any, fallbackGatewayUrl: string) {
-  stripRuntimeComposioServer(api);
+  if (!process.env.COMPOSIO_API_KEY?.trim()) {
+    stripRuntimeComposioServer(api);
+  }
 
-  const gatewayBaseUrl = resolveGatewayBaseUrl(api, fallbackGatewayUrl);
+  const baseUrl = resolveGatewayBaseUrl(api, fallbackGatewayUrl);
   const apiKey = resolveApiKey();
   if (!apiKey) {
     return;
   }
 
+  const mode: "native" | "dench-cloud" = process.env.COMPOSIO_API_KEY?.trim()
+    ? "native"
+    : "dench-cloud";
+
   const tool = createDenchExecuteIntegrationsTool({
-    gatewayBaseUrl,
-    authorization: `Bearer ${apiKey}`,
+    baseUrl,
+    apiKey,
+    mode,
   });
 
   api.registerTool(tool, {

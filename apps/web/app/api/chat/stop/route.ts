@@ -8,11 +8,17 @@ import { abortRun, getActiveRun } from "@/lib/active-runs";
 import { listSubagentsForRequesterSession } from "@/lib/subagent-registry";
 import { trackServer } from "@/lib/telemetry";
 import { resolveActiveAgentId } from "@/lib/workspace";
-import { resolveSessionKey } from "@/app/api/web-sessions/shared";
+import { getSessionMeta, resolveSessionKey } from "@/app/api/web-sessions/shared";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+	const authSession = getSessionFromHeaders(req.headers);
+	if (!authSession) {
+		return Response.json({ error: "Unauthorized" }, { status: 401 });
+	}
+
 	const body: { sessionId?: string; sessionKey?: string; cascadeChildren?: boolean } = await req
 		.json()
 		.catch(() => ({}));
@@ -22,6 +28,14 @@ export async function POST(req: Request) {
 
 	if (!runKey) {
 		return new Response("sessionId or subagent sessionKey required", { status: 400 });
+	}
+
+	// Workspace-scope guard: non-admins may only stop sessions in their own workspace.
+	if (authSession.role !== "admin" && body.sessionId) {
+		const meta = getSessionMeta(body.sessionId);
+		if (meta?.workspaceName && meta.workspaceName !== authSession.workspaceName) {
+			return Response.json({ error: "Forbidden" }, { status: 403 });
+		}
 	}
 
 	const run = getActiveRun(runKey);

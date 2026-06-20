@@ -23,6 +23,7 @@
  */
 
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 vi.mock("@/lib/sync-runner", () => ({
   getSyncStatus: vi.fn(),
@@ -37,6 +38,14 @@ const { readSyncCursors } = await import("@/lib/denchclaw-state");
 
 const mockedStatus = vi.mocked(getSyncStatus);
 const mockedCursors = vi.mocked(readSyncCursors);
+
+const theRequest = new Request("http://localhost", {
+  headers: {
+    "x-user-id": "u1",
+    "x-user-role": "admin",
+    "x-workspace-name": "test",
+  },
+});
 
 function emptyStatus() {
   return {
@@ -63,7 +72,7 @@ describe("/api/sync/status", () => {
       updatedAt: new Date().toISOString(),
     });
 
-    const res = await GET();
+    const res = await GET(theRequest as unknown as NextRequest);
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     const body = await res.json();
@@ -90,7 +99,7 @@ describe("/api/sync/status", () => {
       updatedAt: new Date().toISOString(),
     });
 
-    const res = await GET();
+    const res = await GET(theRequest as unknown as NextRequest);
     const body = await res.json();
     expect(body.gmail.stale).toBe(true);
     expect(body.calendar.stale).toBe(true);
@@ -113,7 +122,7 @@ describe("/api/sync/status", () => {
       updatedAt: recent,
     });
 
-    const res = await GET();
+    const res = await GET(theRequest as unknown as NextRequest);
     const body = await res.json();
     expect(body.gmail.stale).toBe(false);
     expect(body.calendar.stale).toBe(false);
@@ -137,7 +146,7 @@ describe("/api/sync/status", () => {
       updatedAt: new Date().toISOString(),
     });
 
-    const res = await GET();
+    const res = await GET(theRequest as unknown as NextRequest);
     const body = await res.json();
     expect(body.gmail.stale).toBe(false);
     expect(body.calendar.stale).toBe(false);
@@ -156,7 +165,7 @@ describe("/api/sync/status", () => {
     });
     mockedCursors.mockReturnValue({ version: 1, updatedAt: new Date().toISOString() });
 
-    const res = await GET();
+    const res = await GET(theRequest as unknown as NextRequest);
     const body = await res.json();
     expect(body.gmail.lastError).toMatch(/not active or does not exist/);
     expect(body.gmail.needsReconnect).toBe(true);

@@ -4,6 +4,11 @@ import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { resolveOpenClawStateDir } from "@/lib/workspace";
+import {
+  resolveComposioMode,
+  resolveComposioApiKey as resolveComposioApiKeyFromMode,
+  resolveComposioBaseUrl,
+} from "@/lib/composio-mode";
 
 /**
  * Returns a guaranteed-valid working directory for spawning child processes.
@@ -124,6 +129,10 @@ export type IntegrationsState = {
     isPrimaryProvider: boolean;
     primaryModel: string | null;
   };
+  composio: {
+    hasKey: boolean;
+    mode: "native" | "dench-cloud" | "none";
+  };
   metadata: DenchIntegrationMetadata;
   search: {
     builtIn: BuiltInSearchState;
@@ -182,7 +191,6 @@ export type OpenClawConfig = UnknownRecord;
 
 export type DenchIntegrationToggleDraft = Partial<Record<DenchIntegrationId, boolean>>;
 
-const DEFAULT_GATEWAY_URL = "https://gateway.merseoriginals.com";
 const DEFAULT_FALLBACK_PROVIDER = "duckduckgo";
 const METADATA_FILENAME = ".dench-integrations.json";
 const DENCH_AI_GATEWAY_PLUGIN_ID = "dench-ai-gateway";
@@ -337,14 +345,14 @@ export function writeIntegrationsMetadata(metadata: DenchIntegrationMetadata): v
   writeFileSync(filePath, JSON.stringify(metadata, null, 2) + "\n", "utf-8");
 }
 
-function resolveGatewayBaseUrl(config: OpenClawConfig): string | null {
+function resolveGatewayBaseUrl(config: OpenClawConfig): string {
   const plugins = asRecord(config.plugins);
   const pluginEntries = asRecord(plugins?.entries);
   const gatewayConfig = asRecord(asRecord(pluginEntries?.["dench-ai-gateway"])?.config);
   return (
     readString(gatewayConfig?.gatewayUrl) ||
     process.env.DENCH_GATEWAY_URL?.trim() ||
-    DEFAULT_GATEWAY_URL
+    resolveComposioBaseUrl()
   );
 }
 
@@ -438,7 +446,7 @@ function ensureDenchAiGatewayConfig(config: OpenClawConfig, entry: UnknownRecord
     return false;
   }
   const cfg = ensureRecord(entry, "config");
-  const gatewayUrl = resolveGatewayBaseUrl(config) ?? DEFAULT_GATEWAY_URL;
+  const gatewayUrl = resolveGatewayBaseUrl(config);
   if (cfg.gatewayUrl === gatewayUrl) {
     return false;
   }
@@ -782,7 +790,7 @@ function readBuiltInSearchState(config: OpenClawConfig): BuiltInSearchState {
 
 function disableElevenLabsOverride(config: OpenClawConfig): boolean {
   const tts = ensureTtsConfig(config);
-  const gatewayBaseUrl = resolveGatewayBaseUrl(config) ?? DEFAULT_GATEWAY_URL;
+  const gatewayBaseUrl = resolveGatewayBaseUrl(config);
   const denchApiKey = resolveDenchApiKey(config);
   let changed = false;
 
@@ -793,9 +801,8 @@ function disableElevenLabsOverride(config: OpenClawConfig): boolean {
   if (elevenlabs) {
     const shouldClearApiKey =
       (denchApiKey && elevenlabs.apiKey === denchApiKey) ||
-      elevenlabs.baseUrl === gatewayBaseUrl ||
-      elevenlabs.baseUrl === DEFAULT_GATEWAY_URL;
-    if (elevenlabs.baseUrl === gatewayBaseUrl || elevenlabs.baseUrl === DEFAULT_GATEWAY_URL) {
+      elevenlabs.baseUrl === gatewayBaseUrl;
+    if (elevenlabs.baseUrl === gatewayBaseUrl) {
       delete elevenlabs.baseUrl;
       changed = true;
     }
@@ -1079,11 +1086,16 @@ export function getIntegrationsState(): IntegrationsState {
     )
     .map((plugin) => buildManagedPluginState(config, plugin));
 
+  const composioMode = resolveComposioMode();
   return {
     denchCloud: {
       hasKey: eligibility.hasKey,
       isPrimaryProvider: eligibility.isPrimaryProvider,
       primaryModel: eligibility.primaryModel,
+    },
+    composio: {
+      hasKey: resolveComposioApiKeyFromMode() !== null,
+      mode: composioMode,
     },
     metadata: {
       schemaVersion: 1,
@@ -1295,7 +1307,7 @@ export function applyDenchIntegrationToggleDraft(params: {
     }
     case "elevenlabs": {
       const tts = ensureTtsConfig(config);
-      const gatewayBaseUrl = resolveGatewayBaseUrl(config) ?? DEFAULT_GATEWAY_URL;
+      const gatewayBaseUrl = resolveGatewayBaseUrl(config);
       const denchApiKey = resolveDenchApiKey(config);
 
       if (enabled) {

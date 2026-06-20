@@ -3,8 +3,11 @@ import { join } from "node:path";
 import { resolveOpenClawStateDir } from "@/lib/workspace";
 import { normalizeComposioToolkitSlug } from "@/lib/composio-normalization";
 import { readConfiguredDenchCloudSettings } from "../../../src/cli/dench-cloud";
-
-const DEFAULT_GATEWAY_URL = "https://gateway.merseoriginals.com";
+import {
+  resolveComposioMode,
+  resolveComposioApiKey as resolveComposioApiKeyFromMode,
+  resolveComposioBaseUrl,
+} from "@/lib/composio-mode";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -313,33 +316,20 @@ function readConfig(): UnknownRecord {
 }
 
 export function resolveComposioGatewayUrl(): string {
-  const config = readConfig();
-  const settings = readConfiguredDenchCloudSettings(config);
-  const plugins = asRecord(config.plugins);
-  const pluginEntries = asRecord(plugins?.entries);
-  const gatewayConfig = asRecord(asRecord(pluginEntries?.["dench-ai-gateway"])?.config);
-  return (
-    settings.gatewayUrl ||
-    readString(gatewayConfig?.gatewayUrl) ||
-    process.env.DENCH_GATEWAY_URL?.trim() ||
-    DEFAULT_GATEWAY_URL
-  );
+  return resolveComposioBaseUrl();
 }
 
 export function resolveComposioApiKey(): string | null {
+  // Check config-stored dench-cloud key first (backward compat for persisted configs),
+  // then delegate to the mode resolver which handles env var priority.
   const config = readConfig();
   const models = asRecord(config.models);
   const provider = asRecord(asRecord(models?.providers)?.["dench-cloud"]);
-  if (readString(provider?.apiKey)) {
-    return readString(provider?.apiKey) ?? null;
+  const configKey = readString(provider?.apiKey);
+  if (configKey) {
+    return configKey;
   }
-  if (process.env.DENCH_CLOUD_API_KEY?.trim()) {
-    return process.env.DENCH_CLOUD_API_KEY.trim();
-  }
-  if (process.env.DENCH_API_KEY?.trim()) {
-    return process.env.DENCH_API_KEY.trim();
-  }
-  return null;
+  return resolveComposioApiKeyFromMode();
 }
 
 export function resolveComposioEligibility(): {
@@ -347,26 +337,12 @@ export function resolveComposioEligibility(): {
   lockReason: "missing_dench_key" | "dench_not_primary" | null;
   lockBadge: string | null;
 } {
-  const config = readConfig();
-  const apiKey = resolveComposioApiKey();
-  if (!apiKey) {
+  const eligible = resolveComposioMode() !== "none";
+  if (!eligible) {
     return {
       eligible: false,
       lockReason: "missing_dench_key",
-      lockBadge: "Get Dench Cloud API Key",
-    };
-  }
-  const agents = asRecord(config.agents);
-  const defaults = asRecord(agents?.defaults);
-  const model = defaults?.model;
-  const primary = typeof model === "string"
-    ? readString(model)
-    : readString(asRecord(model)?.primary);
-  if (!primary?.startsWith("dench-cloud/")) {
-    return {
-      eligible: false,
-      lockReason: "dench_not_primary",
-      lockBadge: "Use Dench Cloud",
+      lockBadge: "Get Composio API Key",
     };
   }
   return { eligible: true, lockReason: null, lockBadge: null };
@@ -383,11 +359,16 @@ async function gatewayFetch(
   init?: RequestInit,
 ): Promise<Response> {
   const url = `${gatewayUrl}${path}`;
+  const mode = resolveComposioMode();
+  const authHeaders: Record<string, string> =
+    mode === "native"
+      ? { "x-composio-api-key": apiKey }
+      : { authorization: `Bearer ${apiKey}` };
   return fetch(url, {
     ...init,
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
+      ...authHeaders,
       ...init?.headers,
     },
   });
@@ -635,7 +616,15 @@ export async function fetchComposioMcpToolsList(
     connectedAccountId?: string;
   },
 ): Promise<ComposioMcpTool[]> {
-  const url = `${gatewayUrl.replace(/\/$/, "")}/v1/composio/mcp`;
+  const mode = resolveComposioMode();
+  const url =
+    mode === "native"
+      ? `https://mcp.composio.dev/${apiKey}`
+      : `${gatewayUrl.replace(/\/$/, "")}/v1/composio/mcp`;
+  const authHeaders: Record<string, string> =
+    mode === "native"
+      ? { "x-composio-api-key": apiKey }
+      : { authorization: `Bearer ${apiKey}` };
   const connectedToolkits = options?.connectedToolkits?.filter((slug) => slug.trim().length > 0) ?? [];
   const preferredToolNames = options?.preferredToolNames?.filter((name) => name.trim().length > 0) ?? [];
   const connectedAccountId = options?.connectedAccountId?.trim() || undefined;
@@ -652,7 +641,7 @@ export async function fetchComposioMcpToolsList(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${apiKey}`,
+        ...authHeaders,
         accept: "application/json, text/event-stream",
       },
       body: JSON.stringify({

@@ -25,6 +25,7 @@ import {
 import { resolveDenchPackageRoot } from "@/lib/project-root";
 import { trackServer } from "@/lib/telemetry";
 import { ensureLatestSchema } from "@/lib/workspace-schema-migrations";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -76,6 +77,15 @@ function loadTemplateContent(filename: string, projectRoot: string | null): stri
 // ---------------------------------------------------------------------------
 
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Creating a new workspace is workspace-management and admin-only.
+  if (session.role !== "admin") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = (await req.json().catch(() => ({}))) as {
     workspace?: string;
     profile?: string;

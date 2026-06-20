@@ -65,6 +65,19 @@ const noKeyState = {
 
 const refreshOk = { attempted: true, restarted: true, error: null, profile: "dench" };
 
+const adminHeaders = {
+  "x-user-id": "u1",
+  "x-user-role": "admin",
+  "x-workspace-name": "test",
+};
+
+function makeAdminRequest(init?: RequestInit): Request {
+  return new Request("http://localhost", {
+    ...init,
+    headers: { ...(init?.headers as Record<string, string> | undefined), ...adminHeaders },
+  });
+}
+
 describe("cloud settings API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -72,7 +85,7 @@ describe("cloud settings API", () => {
 
   it("GET returns current cloud settings state", async () => {
     mockedGet.mockResolvedValue(validState);
-    const res = await GET();
+    const res = await GET(makeAdminRequest());
     const body = await res.json();
     expect(body.status).toBe("valid");
     expect(body.isDenchPrimary).toBe(true);
@@ -80,13 +93,13 @@ describe("cloud settings API", () => {
 
   it("GET returns 500 on error", async () => {
     mockedGet.mockRejectedValue(new Error("read failed"));
-    const res = await GET();
+    const res = await GET(makeAdminRequest());
     expect(res.status).toBe(500);
   });
 
   it("POST save_key validates and persists key", async () => {
     mockedSaveKey.mockResolvedValue({ state: validState, changed: true, refresh: refreshOk });
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_key", apiKey: "dench_test_key" }),
@@ -100,7 +113,7 @@ describe("cloud settings API", () => {
   });
 
   it("POST save_key rejects empty key", async () => {
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_key", apiKey: "" }),
@@ -116,7 +129,7 @@ describe("cloud settings API", () => {
       refresh: { attempted: false, restarted: false, error: null, profile: "default" },
       error: "Invalid Dench Cloud API key.",
     });
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_key", apiKey: "bad_key" }),
@@ -129,7 +142,7 @@ describe("cloud settings API", () => {
 
   it("POST select_model switches primary model", async () => {
     mockedSelectModel.mockResolvedValue({ state: validState, changed: true, refresh: refreshOk });
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "select_model", stableId: "gpt-5.4" }),
@@ -142,7 +155,7 @@ describe("cloud settings API", () => {
   });
 
   it("POST select_model rejects empty stableId", async () => {
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "select_model", stableId: "" }),
@@ -153,7 +166,7 @@ describe("cloud settings API", () => {
 
   it("POST save_voice persists the selected voice", async () => {
     mockedSaveVoice.mockResolvedValue({ state: validState, changed: true, refresh: refreshOk });
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_voice", voiceId: "voice_123" }),
@@ -164,7 +177,7 @@ describe("cloud settings API", () => {
   });
 
   it("POST save_voice rejects invalid voice payloads", async () => {
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_voice", voiceId: 123 }),
@@ -182,6 +195,7 @@ describe("cloud settings API", () => {
           isPrimaryProvider: true,
           primaryModel: validState.primaryModel,
         },
+        composio: { hasKey: true, mode: "dench-cloud" as const },
         metadata: {
           schemaVersion: 1 as const,
           exa: { ownsSearch: true, fallbackProvider: "duckduckgo" },
@@ -198,7 +212,7 @@ describe("cloud settings API", () => {
       changed: true,
       refresh: refreshOk,
     });
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -226,7 +240,7 @@ describe("cloud settings API", () => {
   });
 
   it("POST save_active_settings rejects invalid integration payloads", async () => {
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -241,7 +255,7 @@ describe("cloud settings API", () => {
   });
 
   it("POST rejects unknown actions", async () => {
-    const req = new Request("http://localhost/api/settings/cloud", {
+    const req = makeAdminRequest({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete_key" }),

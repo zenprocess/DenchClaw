@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+vi.mock("@/lib/auth/session", () => ({
+  getSessionFromHeaders: vi.fn(() => ({
+    userId: "user-admin",
+    role: "admin",
+    workspaceName: "default",
+  })),
+}));
+
 vi.mock("@/lib/integrations", () => ({
   normalizeLockedDenchIntegrations: vi.fn(() => ({
     changed: false,
@@ -47,7 +55,14 @@ describe("integrations API", () => {
 
   it("returns normalized integrations state", async () => {
     const { GET } = await import("./route.js");
-    const response = await GET();
+    const req = new Request("http://localhost/api/integrations", {
+      headers: {
+        "x-user-id": "user-admin",
+        "x-user-role": "admin",
+        "x-workspace-name": "default",
+      },
+    });
+    const response = await GET(req);
     expect(response.status).toBe(200);
     const json = await response.json();
     expect(json.search.effectiveOwner).toBe("exa");

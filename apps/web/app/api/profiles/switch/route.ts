@@ -5,6 +5,7 @@ import {
   resolveWorkspaceRoot,
   setUIActiveWorkspace,
 } from "@/lib/workspace";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,6 +27,15 @@ function normalizeSwitchWorkspace(raw: unknown): string | null {
 }
 
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Switching the global active workspace is an admin-only operation.
+  if (session.role !== "admin") {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = (await req.json().catch(() => ({}))) as { workspace?: unknown; profile?: unknown };
   const requestedWorkspace = normalizeSwitchWorkspace(body.workspace ?? body.profile);
   if (!requestedWorkspace) {

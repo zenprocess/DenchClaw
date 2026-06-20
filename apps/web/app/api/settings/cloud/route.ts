@@ -6,11 +6,16 @@ import {
   selectModel,
 } from "@/lib/dench-cloud-settings";
 import type { DenchIntegrationId, DenchIntegrationToggleDraft } from "@/lib/integrations";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
+
   try {
     const state = await getCloudSettingsState();
     return Response.json(state);
@@ -35,6 +40,10 @@ function isSupportedIntegration(id: string): id is DenchIntegrationId {
 }
 
 export async function POST(request: Request) {
+  const session = getSessionFromHeaders(request.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
+
   let body: PostBody;
   try {
     body = (await request.json()) as PostBody;

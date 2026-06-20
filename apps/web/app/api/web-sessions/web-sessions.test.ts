@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { NextRequest } from "next/server";
 
 // Mock node:fs
 vi.mock("node:fs", () => ({
@@ -18,6 +19,13 @@ vi.mock("node:os", () => ({
 vi.mock("node:crypto", () => ({
   randomUUID: vi.fn(() => "test-uuid-1234"),
 }));
+
+/** Admin identity headers — admin role means no per-user filtering (original behavior). */
+const adminHeaders = {
+  "x-user-id": "u1",
+  "x-user-role": "admin",
+  "x-workspace-name": "test",
+};
 
 describe("Web Sessions API", () => {
   beforeEach(() => {
@@ -46,8 +54,8 @@ describe("Web Sessions API", () => {
   describe("GET /api/web-sessions", () => {
     it("returns empty sessions when no index exists", async () => {
       const { GET } = await import("./route.js");
-      const req = new Request("http://localhost/api/web-sessions");
-      const res = await GET(req);
+      const req = new Request("http://localhost/api/web-sessions", { headers: adminHeaders });
+      const res = await GET(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.sessions).toEqual([]);
     });
@@ -62,8 +70,8 @@ describe("Web Sessions API", () => {
       vi.mocked(mockReadFile).mockReturnValue(JSON.stringify(sessions) as never);
 
       const { GET } = await import("./route.js");
-      const req = new Request("http://localhost/api/web-sessions");
-      const res = await GET(req);
+      const req = new Request("http://localhost/api/web-sessions", { headers: adminHeaders });
+      const res = await GET(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.sessions).toHaveLength(1);
       expect(json.sessions[0].id).toBe("s1");
@@ -79,8 +87,8 @@ describe("Web Sessions API", () => {
       vi.mocked(mockReadFile).mockReturnValue(JSON.stringify(sessions) as never);
 
       const { GET } = await import("./route.js");
-      const req = new Request("http://localhost/api/web-sessions?filePath=doc.md");
-      const res = await GET(req);
+      const req = new Request("http://localhost/api/web-sessions?filePath=doc.md", { headers: adminHeaders });
+      const res = await GET(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.sessions).toHaveLength(1);
       expect(json.sessions[0].filePath).toBe("doc.md");
@@ -92,8 +100,8 @@ describe("Web Sessions API", () => {
       vi.mocked(mockReadFile).mockReturnValue("[]" as never);
 
       const { GET } = await import("./route.js");
-      const req = new Request("http://localhost/api/web-sessions?filePath=nonexistent.md");
-      const res = await GET(req);
+      const req = new Request("http://localhost/api/web-sessions?filePath=nonexistent.md", { headers: adminHeaders });
+      const res = await GET(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.sessions).toEqual([]);
     });
@@ -108,10 +116,10 @@ describe("Web Sessions API", () => {
       const { POST } = await import("./route.js");
       const req = new Request("http://localhost/api/web-sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders },
         body: JSON.stringify({}),
       });
-      const res = await POST(req);
+      const res = await POST(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.session.id).toBe("test-uuid-1234");
       expect(json.session.title).toBe("New Chat");
@@ -128,10 +136,10 @@ describe("Web Sessions API", () => {
       const { POST } = await import("./route.js");
       const req = new Request("http://localhost/api/web-sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders },
         body: JSON.stringify({ title: "Workspace Chat" }),
       });
-      const res = await POST(req);
+      const res = await POST(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.session.title).toBe("Workspace Chat");
       expect(json.session.filePath).toBeUndefined();
@@ -141,10 +149,10 @@ describe("Web Sessions API", () => {
       const { POST } = await import("./route.js");
       const req = new Request("http://localhost/api/web-sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders },
         body: JSON.stringify({ title: "My Chat" }),
       });
-      const res = await POST(req);
+      const res = await POST(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.session.title).toBe("My Chat");
     });
@@ -153,10 +161,10 @@ describe("Web Sessions API", () => {
       const { POST } = await import("./route.js");
       const req = new Request("http://localhost/api/web-sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders },
         body: JSON.stringify({ title: "File Chat", filePath: "readme.md" }),
       });
-      const res = await POST(req);
+      const res = await POST(req as unknown as NextRequest);
       const json = await res.json();
       expect(json.session.filePath).toBe("readme.md");
     });
@@ -165,10 +173,10 @@ describe("Web Sessions API", () => {
       const { POST } = await import("./route.js");
       const req = new Request("http://localhost/api/web-sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders },
         body: "not json",
       });
-      const res = await POST(req);
+      const res = await POST(req as unknown as NextRequest);
       const json = await res.json();
       // Falls back to default title
       expect(json.session.title).toBe("New Chat");
@@ -180,10 +188,10 @@ describe("Web Sessions API", () => {
       const { POST } = await import("./route.js");
       const req = new Request("http://localhost/api/web-sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders },
         body: JSON.stringify({}),
       });
-      await POST(req);
+      await POST(req as unknown as NextRequest);
       // Should write at least the index.json and the empty .jsonl
       expect(mockWrite).toHaveBeenCalled();
       // Verify that one of the calls is to the jsonl file

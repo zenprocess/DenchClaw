@@ -22,6 +22,15 @@ export async function register() {
       console.error("[instrumentation] ensureLatestSchema failed:", err);
     }
 
+    try {
+      await import("./lib/auth/migration").then((m) => m.runMigrationIfNeeded());
+    } catch (err) {
+      // Non-fatal — a migration failure must not prevent the server from
+      // starting. The workspace is still accessible; the user will simply
+      // need to run the migration manually or re-start with a clean state.
+      process.stderr.write(`[instrumentation] runMigrationIfNeeded failed: ${err}\n`);
+    }
+
     // Note: the Gmail/Calendar incremental poll loop is no longer armed
     // from inside the Next.js process. The OpenClaw gateway daemon's
     // `dench-ai-gateway` plugin owns the timing now and POSTs to

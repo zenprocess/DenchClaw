@@ -616,7 +616,15 @@ export async function fetchComposioMcpToolsList(
     connectedAccountId?: string;
   },
 ): Promise<ComposioMcpTool[]> {
-  const url = `${gatewayUrl.replace(/\/$/, "")}/v1/composio/mcp`;
+  const mode = resolveComposioMode();
+  const url =
+    mode === "native"
+      ? `https://mcp.composio.dev/${apiKey}`
+      : `${gatewayUrl.replace(/\/$/, "")}/v1/composio/mcp`;
+  const authHeaders: Record<string, string> =
+    mode === "native"
+      ? { "x-composio-api-key": apiKey }
+      : { authorization: `Bearer ${apiKey}` };
   const connectedToolkits = options?.connectedToolkits?.filter((slug) => slug.trim().length > 0) ?? [];
   const preferredToolNames = options?.preferredToolNames?.filter((name) => name.trim().length > 0) ?? [];
   const connectedAccountId = options?.connectedAccountId?.trim() || undefined;
@@ -633,7 +641,7 @@ export async function fetchComposioMcpToolsList(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${apiKey}`,
+        ...authHeaders,
         accept: "application/json, text/event-stream",
       },
       body: JSON.stringify({

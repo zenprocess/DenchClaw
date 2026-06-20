@@ -1,10 +1,10 @@
 import type { Dirent } from "node:fs";
+import { existsSync } from "node:fs";
 import { access, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import {
-  resolveWorkspaceRoot,
+  resolveWorkspaceDirForName,
   resolveOpenClawStateDir,
-  getActiveWorkspaceName,
   parseSimpleYaml,
   duckdbQueryAllAsync,
   isDatabaseFile,
@@ -13,6 +13,7 @@ import {
   projectMissingObjectsToFilesystem,
   type ProjectionTarget,
 } from "@/lib/workspace-projection";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -267,12 +268,24 @@ async function buildTree(
 
 
 export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const showHidden = url.searchParams.get("showHidden") === "1";
 
   const openclawDir = resolveOpenClawStateDir();
-  const workspace = getActiveWorkspaceName();
-  const root = resolveWorkspaceRoot();
+  const workspace = session.workspaceName;
+  const root = (() => {
+    try {
+      const dir = resolveWorkspaceDirForName(workspace);
+      return existsSync(dir) ? dir : null;
+    } catch {
+      return null;
+    }
+  })();
   if (!root) {
     const tree: TreeNode[] = [];
     return Response.json({ tree, exists: false, workspaceRoot: null, openclawDir, workspace });

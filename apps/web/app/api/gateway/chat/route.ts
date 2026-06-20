@@ -9,10 +9,22 @@ import {
 	buildChatImageHydrationErrorMessage,
 	hydrateMessageImageAttachments,
 } from "@/lib/chat-image-attachments";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+	const session = getSessionFromHeaders(req.headers);
+	if (!session) {
+		return Response.json({ error: "Unauthorized" }, { status: 401 });
+	}
+	try {
+		requirePermission(session.role, "workspace:write");
+	} catch {
+		return Response.json({ error: "Forbidden" }, { status: 403 });
+	}
+
 	const { sessionKey, message }: { sessionKey: string; message: string } = await req.json();
 
 	if (!sessionKey || !message?.trim()) {

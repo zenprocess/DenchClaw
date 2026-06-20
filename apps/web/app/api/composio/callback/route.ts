@@ -17,6 +17,7 @@ import {
 import { refreshIntegrationsRuntime } from "@/lib/integrations";
 import { resolveAppPublicOrigin } from "@/lib/public-origin";
 import type { NormalizedComposioConnection } from "@/lib/composio";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,7 +41,10 @@ function syncToolkitFromConnection(
   return null;
 }
 
-function persistLocalSyncConnection(connection: NormalizedComposioConnection): void {
+function persistLocalSyncConnection(
+  connection: NormalizedComposioConnection,
+  workspaceName: string,
+): void {
   if (!connection.is_active) {
     return;
   }
@@ -56,16 +60,19 @@ function persistLocalSyncConnection(connection: NormalizedComposioConnection): v
     accountLabel: connection.display_label,
     connectedAt: new Date().toISOString(),
   };
-  writeConnection(toolkit, record);
+  writeConnection(toolkit, record, workspaceName);
 
-  const current = readOnboardingState();
-  writeOnboardingState({
-    ...current,
-    connections: {
-      ...current.connections,
-      [toolkit]: record,
+  const current = readOnboardingState(workspaceName);
+  writeOnboardingState(
+    {
+      ...current,
+      connections: {
+        ...current.connections,
+        [toolkit]: record,
+      },
     },
-  });
+    workspaceName,
+  );
 }
 
 async function resolveConnectedConnection(
@@ -93,6 +100,11 @@ async function resolveConnectedConnection(
 }
 
 export async function GET(request: Request) {
+  const session = getSessionFromHeaders(request.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(request.url);
   const { searchParams } = url;
   const status = searchParams.get("status") ?? "unknown";
@@ -112,7 +124,7 @@ export async function GET(request: Request) {
     invalidateComposioConnectionsCache();
     resolvedConnection = await resolveConnectedConnection(connectedAccountId);
     if (resolvedConnection) {
-      persistLocalSyncConnection(resolvedConnection);
+      persistLocalSyncConnection(resolvedConnection, session.workspaceName);
     }
     void (async () => {
       try {

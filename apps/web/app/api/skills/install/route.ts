@@ -14,7 +14,9 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { randomBytes } from "node:crypto";
 import { discoverSkillsInRepo, parseSkillFrontmatter, readSkillsLock, selectSkillForSlug, writeSkillsLock } from "@/lib/skills";
-import { resolveWorkspaceRoot } from "@/lib/workspace";
+import { resolveWorkspaceDirForName } from "@/lib/workspace";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +84,16 @@ function resolveExtractedSkillDir(repoRoot: string, slug: string): string {
 }
 
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  }
+
   let slug: string;
   let source: string;
 
@@ -106,10 +118,10 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: "Invalid skill source" }, { status: 400 });
   }
 
-  const workspaceRoot = resolveWorkspaceRoot();
-  if (!workspaceRoot) {
-    return Response.json({ ok: false, error: "Workspace root not found" }, { status: 500 });
-  }
+  // Scope the install to the caller's workspace; non-admins are always isolated
+  // to their own workspace. resolveWorkspaceDirForName always returns a string
+  // (it throws on an invalid name, which is already validated above as a slug).
+  const workspaceRoot = resolveWorkspaceDirForName(session.workspaceName);
 
   const skillsDir = join(workspaceRoot, "skills");
   const targetDir = resolve(skillsDir, slug);

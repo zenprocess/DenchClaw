@@ -21,6 +21,7 @@ import {
   fetchConnectionsCached as fetchConnectionsThroughCache,
   fetchResolvedToolkitsCached,
 } from "./cache";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -115,6 +116,11 @@ async function resolveConnectedToolkits(
 }
 
 export async function GET(request: Request) {
+  const session = getSessionFromHeaders(request.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const apiKey = resolveComposioApiKey();
   if (!apiKey) {
     return Response.json(

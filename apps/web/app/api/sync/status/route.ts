@@ -24,6 +24,7 @@
 
 import { getSyncStatus, type SyncSourceStatus } from "@/lib/sync-runner";
 import { readSyncCursors } from "@/lib/denchclaw-state";
+import { getSessionFromHeaders } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -65,9 +66,13 @@ function classify(
   return { ...status, lastPolledAt, stale };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const status = getSyncStatus();
-  const cursors = readSyncCursors();
+  const cursors = readSyncCursors(session.workspaceName);
   const nowMs = Date.now();
   const body: ResponseBody = {
     gmail: classify(status.gmail, cursors.gmail?.lastPolledAt ?? null, nowMs),

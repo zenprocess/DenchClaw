@@ -19,6 +19,8 @@ import {
 } from "@/lib/composio-client";
 import { normalizeComposioToolkitSlug } from "@/lib/composio-normalization";
 import { trackServer } from "@/lib/telemetry";
+import { getSessionFromHeaders } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -58,8 +60,10 @@ async function resolveAccountEmail(connectionId: string): Promise<string | null>
   }
 }
 
-export async function GET() {
-  return Response.json(readConnections());
+export async function GET(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  return Response.json(readConnections(session.workspaceName));
 }
 
 type PostBody = {
@@ -72,6 +76,13 @@ type PostBody = {
 };
 
 export async function POST(req: Request) {
+  const session = getSessionFromHeaders(req.headers);
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    requirePermission(session.role, "workspace:write");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
   let body: PostBody;
   try {
     body = (await req.json()) as PostBody;
@@ -119,7 +130,7 @@ export async function POST(req: Request) {
     connectedAt: new Date().toISOString(),
   };
 
-  writeConnection(toolkit as "gmail" | "calendar", record);
+  writeConnection(toolkit as "gmail" | "calendar", record, session.workspaceName);
   trackServer("onboarding_toolkit_connected", { toolkit });
 
   // If the request bundles a step transition, do that atomically with the
@@ -129,21 +140,21 @@ export async function POST(req: Request) {
   if (fromStep && toStep && isValidStep(fromStep) && isValidStep(toStep)) {
     const next = advanceOnboardingStep(fromStep, toStep, {
       connections: {
-        ...readOnboardingState().connections,
+        ...readOnboardingState(session.workspaceName).connections,
         [toolkit]: record,
       },
-    });
+    }, session.workspaceName);
     return Response.json(next);
   }
 
   // Otherwise just persist the connection on the current state.
-  const current = readOnboardingState();
+  const current = readOnboardingState(session.workspaceName);
   const next = writeOnboardingState({
     ...current,
     connections: {
       ...current.connections,
       [toolkit]: record,
     },
-  });
+  }, session.workspaceName);
   return Response.json(next);
 }
